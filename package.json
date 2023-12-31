@@ -9,6 +9,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@biomejs/biome": "^1.4.1",
     "@picocss/pico": "^1.5.11"
   }
 }
