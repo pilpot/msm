@@ -8,50 +8,70 @@ interface MastermindGame {
   status: 'idle' | 'playing' | 'won' | 'lost';
   board: number[][];
   resolution: number[][];
+  remainingAnswersCount: number[];
   answer: number[];
-  attempts: number;
   rows: number;
+  allowDuplicates: boolean;
+  guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites';
   columns: number;
   colors: number;
   allRemainingAnswers: number[][];
+  noConsoleOutput: boolean;
+  attempts: number;
 }
+
+const columns: number = 5;
+const colors: number = 8;
+const rows: number = 15;
+const allowDuplicates = false;
 
 let mastermind: MastermindGame = {
   status: 'idle',
-  board: Array(10).fill(null).map(() => Array(5).fill(0)),
-  resolution: Array(10).fill(null).map(() => Array(3).fill(0)),
-  answer: Array(5).fill(0),
-  attempts: 0,
-  rows: 10,
-  columns: 5,
-  colors: 8,
+  board: Array(rows).fill(null).map(() => Array(colors).fill(null)),
+  resolution: Array(rows).fill(null).map(() => Array(2).fill(0)),
+  remainingAnswersCount: Array(rows).fill(0),
+  answer: Array(columns).fill(0),
+  rows: rows,
+  allowDuplicates: allowDuplicates,
+  guessAlgorithm: 'random',
+  columns: columns,
+  colors: colors,
   allRemainingAnswers: [],
+  noConsoleOutput: true,
+  attempts: 0
 };
 
 
 // output the board row along the resolution arrays
 async function outputBoard() {
-  console.table(mastermind.answer);
+  mastermind.noConsoleOutput || console.table(mastermind.answer);
   for (let i = 0; i < mastermind.rows; i++) {
-    console.log(mastermind.board[i], mastermind.resolution[i]);
+    // hide empty rows (filled with nulls)
+    if (mastermind.board[i].every(num => num === null)) {
+      continue;
+    }
+    mastermind.noConsoleOutput || console.log(mastermind.board[i], mastermind.resolution[i], mastermind.remainingAnswersCount[i] || "");
   }
+  // line to separate the output from the next game
+  mastermind.noConsoleOutput || console.log("--------------------");
 }
 
 // set the answer with or without duplicates colors
 async function setAnswer(answerProvided?: number[]) {
+  // alert if answer provided contains duplicates and allowDuplicates is false
+  if (answerProvided && answerProvided.some((num, i) => answerProvided.indexOf(num) !== i) && !mastermind.allowDuplicates) {
+    console.log("Answer provided contains duplicates and allowDuplicates is false, answer provided: ", answerProvided);
+  }
+
   if (answerProvided) {
     mastermind.answer = answerProvided;
   } else {
-    const availableColors = Array.from({ length: mastermind.colors }, (_, i) => i);
-    for (let i = 0; i < mastermind.columns; i++) {
-      const colorIndex = Math.floor(Math.random() * availableColors.length);
-      mastermind.answer[i] = availableColors.splice(colorIndex, 1)[0] + 1;
-    }
+    mastermind.answer = generateRandomRow(mastermind.allowDuplicates);
   }
 }
 
-// evaluates a single row and returns the count of white and black pins
-async function evaluateRow(row: number[]): [number, number] {
+// evaluates a single row and returns the count of white and black pins as promise
+async function evaluateRow(row: number[]): Promise<[number, number]> {
   let whitePins = 0;
   let blackPins = 0;
   const answerSet = new Set(mastermind.answer);
@@ -71,9 +91,14 @@ async function evaluateRow(row: number[]): [number, number] {
 
 // answers each resolution not previously filled
 // answered, black pins, white pins
-async function answerResolutionBoard() {
-  for (let i = 0; i < mastermind.rows; i++) {
-    mastermind.resolution[i] = await evaluateRow(mastermind.board[i]);
+async function answerResolutionBoardRow(boardRow: number) {
+  mastermind.resolution[boardRow] = await evaluateRow(mastermind.board[boardRow]);
+}
+
+// resolution board for all board rows
+async function answerResolutionBoardAll() {
+  for (let i = 0; i < mastermind.board.length; i++) {
+    await answerResolutionBoardRow(i);
   }
 }
 
@@ -82,13 +107,20 @@ async function setBoardRow(row: number, content: number[]) {
 }
 
 // returns a new random row
-function generateRandomRow(): number[] {
+function generateRandomRow(allowDuplicates: boolean): number[] {
   const availableColors = Array.from({ length: mastermind.colors }, (_, i) => i);
   const row = [];
-  for (let i = 0; i < mastermind.columns; i++) {
-    const colorIndex = Math.floor(Math.random() * availableColors.length);
-    row[i] = availableColors.splice(colorIndex, 1)[0] + 1;
+  if (!allowDuplicates) {
+    for (let i = 0; i < mastermind.columns; i++) {
+      const colorIndex = Math.floor(Math.random() * availableColors.length);
+      row[i] = availableColors.splice(colorIndex, 1)[0] + 1;
+    }
+  } else {
+    for (let i = 0; i < mastermind.columns; i++) {
+      row[i] = Math.floor(Math.random() * mastermind.colors) + 1;
+    }
   }
+ 
   return row;
 }
 
@@ -139,56 +171,190 @@ async function setAllRemainingAnswers(allowDuplicates: boolean) {
 }
 
 // for a row in the board eliminates from the remaining answers the ones that doens't match white pins and black pins criteria
-async function eliminateAnswers() {
-  for (let i = 0; i < mastermind.rows; i++) {
-    if (mastermind.board[i].every(num => num === 0)) {
-      continue; // Skip rows that contain only zeros
+async function eliminateAnswers(boardRow: number) {
+
+  // Skip rows that contain only nulls
+  if (mastermind.board[boardRow].every(num => num === null)) {
+    return;
+  }
+
+  let totalPositionsInBoardRow = mastermind.resolution[boardRow][1];
+  let totalColorsInBoardRow = mastermind.resolution[boardRow][0] + mastermind.resolution[boardRow][1];
+
+  // evaluate each remaining answer to see if it matches following criterias
+  // - first : colors in the same place
+  // this is count of similar colors (total of black) in the same place in board row and answer
+  // is must be at least the same count of correct positions
+  // - second : global count of similar colors (total of black and white) in the regardless of the place in board row and answer
+  // is must be at least the same count of total colors in the row
+  for (let j = 0; j < mastermind.allRemainingAnswers.length; j++) {
+    let answer = mastermind.allRemainingAnswers[j];
+    let blackCount = 0;
+    let whiteCount = 0;
+
+    // Check for colors in the same place
+    for (let k = 0; k < mastermind.columns; k++) {
+      if (answer[k] === mastermind.board[boardRow][k]) {
+        blackCount++;
+      }
     }
 
-    // evaluate each remaining answer to see if it matches the white pins and black pins criteria
-    mastermind.allRemainingAnswers = mastermind.allRemainingAnswers.filter(answer => {
+    // Check for global count of similar colors
+    for (let k = 0; k < mastermind.columns; k++) {
+      if (answer.includes(mastermind.board[boardRow][k])) {
+        whiteCount++;
+      }
+    }
 
-    });
+    // Check if the answer matches the criteria
+    if (blackCount == totalPositionsInBoardRow && whiteCount >= totalColorsInBoardRow) {
+      continue; // Answer matches the criteria, skip to the next answer
+    }
+
+    // Answer doesn't match the criteria, remove it from the remaining answers
+    mastermind.allRemainingAnswers.splice(j, 1);
+    j--; // Adjust the index after removing an element
   }
-}
-
-// a recursive function that tries to solve the game async 
-async function solveGame() {
 
 }
 
 async function runGameSequence() {
+  mastermind.noConsoleOutput || console.log("Starting game sequence...");
+  //await setAnswer([5, 4, 3, 1, 7]);
   await setAnswer();
-  await setAllRemainingAnswers(false);
-  console.log("Starting answers count: ", mastermind.allRemainingAnswers.length);
-  await makeATry();
+  await setAllRemainingAnswers(mastermind.allowDuplicates);
+  mastermind.noConsoleOutput || console.log("Colors count: ", mastermind.colors, " Columns count: ", mastermind.columns, " Max Rows count: ", mastermind.rows);
+  mastermind.noConsoleOutput || console.log("Guess algorithm: ", mastermind.guessAlgorithm);
+  mastermind.noConsoleOutput || console.log("Starting answers count: ", mastermind.allRemainingAnswers.length);
+
+  // the answer set should exist at this point in the remoning answers array if not throw an error
+  /* if (!mastermind.allRemainingAnswers.includes(mastermind.answer)) {
+    throw new Error("Answer not found in remaining answers");
+  } */
+  // run makeATry until remaining answers last resolution is max black pins for column count
+  // this means that the game is solved
+  // output the number of tries it took
+  // stop if more than board rows
+  while (mastermind.attempts < mastermind.rows && mastermind.resolution[mastermind.attempts][1] < mastermind.columns) {
+    if (!mastermind.allRemainingAnswers.some(remaining => remaining.every((color, index) => color === mastermind.answer[index]))) {
+      throw new Error("Answer has been erroneously eliminated from remaining answers, answer: " + mastermind.answer);
+    }
+    // check for inclusion
+    if (await makeATry()) {
+      break;
+    }
+    mastermind.attempts++;
+  }
+  mastermind.noConsoleOutput || console.log("Game solved in ", mastermind.attempts + 1, " tries");
+  console.log(mastermind);
 }
 
-async function makeATry() {
-  // Make random try finding the first row empty (filled with zeroees)in the board
+// function to remove an answer by value from all remaining answers
+function removeAnswer(answer: number[]) {
+  const index = mastermind.allRemainingAnswers.indexOf(answer);
+  mastermind.allRemainingAnswers.splice(index, 1);
+}
+
+async function makeATry(): Promise<boolean> {
+  // Make random try finding the first row empty (filled with zeroes)in the board
   let emptyRowIndex = -1;
   for (let i = 0; i < mastermind.rows; i++) {
-    if (mastermind.board[i].every(num => num === 0)) {
+    if (mastermind.board[i].every(num => num === null)) {
       emptyRowIndex = i;
       break;
     }
   }
 
-  // Make random try for the empty row
-  if (emptyRowIndex !== -1) {
-    await setBoardRow(emptyRowIndex, generateRandomRow());
-    await answerResolutionBoard();
-    await eliminateAnswers();
-    await outputBoard();
-    console.log("Remaining answers count: ", mastermind.allRemainingAnswers.length);
+  // there is no empty row in the board
+  if (emptyRowIndex == -1) {
+    throw new Error("No empty row in the board");
   }
+  // Make random try for the first row
+  if (emptyRowIndex == 0) {
+    let randomRow: number[] = generateRandomRow(mastermind.allowDuplicates);
+    await setBoardRow(emptyRowIndex, randomRow);
+    removeAnswer(randomRow);
+  }
+  // if algorithm is the first of the remaining answers
+  else if (mastermind.guessAlgorithm === 'first' && mastermind.allRemainingAnswers.length > 0) {
+    const firstAnswer = mastermind.allRemainingAnswers[0];
+    await setBoardRow(emptyRowIndex, firstAnswer);
+    removeAnswer(firstAnswer);
+  }
+  // or try randomoly one of the remaining answers
+  else if (mastermind.guessAlgorithm === 'random' && mastermind.allRemainingAnswers.length > 0) {
+    const randomIndex = Math.floor(Math.random() * mastermind.allRemainingAnswers.length);
+    const randomAnswer = mastermind.allRemainingAnswers[randomIndex];
+    await setBoardRow(emptyRowIndex, randomAnswer);
+    removeAnswer(randomAnswer);
+  }
+  // weight remaining answers by remaining answers count
+  else if (mastermind.guessAlgorithm === 'optimal') {
+    // todo
+    throw new Error("Not implemented");
+  }
+  // choose the remaining answer with the highest black pins count
+  else if (mastermind.guessAlgorithm === "moreBlacks") {
+    // sort most colors is in the same position as in the previous answer
+    mastermind.allRemainingAnswers = sortBySamePosition(mastermind.board[emptyRowIndex - 1], mastermind.allRemainingAnswers);
+    await setBoardRow(emptyRowIndex, mastermind.allRemainingAnswers[0]);
+    removeAnswer(mastermind.allRemainingAnswers[0]);
+  }
+  // choose the remaining answer with the less white pins count
+  else if (mastermind.guessAlgorithm === "lessWhites") {
+    // sort least amount of colors in common with the previous answer
+    mastermind.allRemainingAnswers = sortByLeastCommonColors(mastermind.board[emptyRowIndex - 1], mastermind.allRemainingAnswers);
+    await setBoardRow(emptyRowIndex, mastermind.allRemainingAnswers[0]);
+    removeAnswer(mastermind.allRemainingAnswers[0]);
+  }
+
+  await answerResolutionBoardRow(emptyRowIndex);
+  await eliminateAnswers(emptyRowIndex);
+
+
+  if (mastermind.resolution[emptyRowIndex][1] == mastermind.columns) {
+    await outputBoard();
+    // last board row is the correct answer
+    // console.log(mastermind.board[emptyRowIndex] , " is the correct answer");
+    return true;
+  }
+  mastermind.remainingAnswersCount[emptyRowIndex] = mastermind.allRemainingAnswers.length;
+  return false;
 }
 
+function sortByLeastCommonColors(previousAnswer: number[], remainingAnswers: number[][]): number[][] {
+  return remainingAnswers.sort((a, b) => {
+    const leastCommonColorsA = countLeastCommonColors(previousAnswer, a);
+    const leastCommonColorsB = countLeastCommonColors(previousAnswer, b);
+    return leastCommonColorsA - leastCommonColorsB;
+  });
+}
+function countLeastCommonColors(answerA: number[], answerB: number[]): number {
+  let count = 0;
+  for (let i = 0; i < answerA.length; i++) {
+    if (answerA[i] === answerB[i]) {
+      count++;
+    }
+  }
+  return answerA.length - count;
+}
 
-/* await setBoardRow(0, generateRandomRow());
-await answerResolutionBoard();
-await eliminateAnswers();
-await outputBoard();
-console.log("Remaining answers count: ", mastermind.allRemainingAnswers.length); */
+function sortBySamePosition(previousAnswer: number[], remainingAnswers: number[][]): number[][] {
+  return remainingAnswers.sort((a, b) => {
+    const samePositionA = countSamePosition(previousAnswer, a);
+    const samePositionB = countSamePosition(previousAnswer, b);
+    return samePositionB - samePositionA;
+  });
+}
+
+function countSamePosition(answerA: number[], answerB: number[]): number {
+  let count = 0;
+  for (let i = 0; i < answerA.length; i++) {
+    if (answerA[i] === answerB[i]) {
+      count++;
+    }
+  }
+  return count;
+}
 
 runGameSequence();
