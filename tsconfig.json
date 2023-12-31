@@ -6,6 +6,9 @@
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": false,
+    "paths": {
+      "@/*": ["./src"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -17,7 +20,12 @@
     "skipLibCheck": true,
     "strict": true,
     "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
 
+    // Some stricter flags
+    "useUnknownInCatchVariables": true,
+    "noPropertyAccessFromIndexSignature": true
   }
 }
