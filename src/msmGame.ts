@@ -275,6 +275,37 @@ export class MsmGame implements IMsmGame {
     this.resolution.push([0, 0]);
   }
 
+  // explore the remaining answers recursively to find the shortest path to the answer
+  public exploreRemainingAnswers(remainingAnswers: number[][], currentPath: number[][]): number[][] {
+    // Base case: if there are no more remaining answers, return the current path
+    if (remainingAnswers.length === 0) {
+      return currentPath;
+    }
+
+    let shortestPath: number[][] = [];
+
+    // Iterate through each remaining answer
+    for (let i = 0; i < remainingAnswers.length; i++) {
+      const answer = remainingAnswers[i];
+
+      // Create a copy of the current path and add the current answer to it
+      const newPath = [...currentPath, answer];
+
+      // Remove the current answer from the remaining answers
+      const updatedRemainingAnswers = [...remainingAnswers.slice(0, i), ...remainingAnswers.slice(i + 1)];
+
+      // Recursively explore the remaining answers with the updated path and remaining answers
+      const path = this.exploreRemainingAnswers(updatedRemainingAnswers, newPath);
+
+      // If the current path is shorter than the shortest path, update the shortest path
+      if (shortestPath.length === 0 || path.length < shortestPath.length) {
+        shortestPath = path;
+      }
+    }
+
+    return shortestPath;
+  }
+
   // make a try following the guess algorithm
   public async makeATry(): Promise<boolean> {
     // Make random try finding the first row empty (filled with null)in the board
@@ -312,6 +343,8 @@ export class MsmGame implements IMsmGame {
     // weight remaining answers by remaining answers count
     else if (this.guessAlgorithm === 'optimal') {
       // todo
+      let shortestPath = this.exploreRemainingAnswers(this.allRemainingAnswers, []);
+      console.log("Shortest path:", shortestPath);
       throw new Error("Not implemented");
     }
     // choose the remaining answer with the highest black pins count

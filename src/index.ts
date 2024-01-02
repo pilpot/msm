@@ -25,7 +25,7 @@ async function runBenchmark(numGames: number): Promise<void> {
     let game = new MsmGame(8);
     game.allowDuplicates = false;
     game.noConsoleOutput = true;
-    game.guessAlgorithm = 'random';
+    game.guessAlgorithm = 'optimal';
     game.columns = 5;
     const start: number = Date.now();
     await game.runGameSequence();
@@ -60,4 +60,4 @@ async function runBenchmark(numGames: number): Promise<void> {
   console.log(`The script used approximately ${Math.round(usedMemory * 100) / 100} MB`);
 }
 
-await runBenchmark(10000);
+await runBenchmark(10);
