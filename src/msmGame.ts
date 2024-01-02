@@ -32,12 +32,12 @@ export class MsmGame implements IMsmGame {
   public noConsoleOutput: boolean;
   public attempts: number;
 
-  constructor(columns?: number, rows?: number, colors?: number, allowDuplicates?: boolean, guessAlgorithm?: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites') {
+  constructor(colors?: number, columns?: number, rows?: number, allowDuplicates?: boolean, guessAlgorithm?: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites') {
     this.columns = columns ?? 5;
     this.rows = rows ?? 10;
     this.colors = colors ?? 8;
-    this.availableColors = [1, 2, 3, 4, 5, 6, 7, 8];
-    // value of availableColors is 1-8
+    this.availableColors = Array.from({ length: this.colors }, (_, i) => i + 1);
+    // value of availableColors is 1-8 for 8 colors
     this.status = 'idle';
     this.board = Array(this.rows).fill(null).map(() => Array(this.colors).fill(null));
     this.resolution = Array(this.rows).fill(null).map(() => Array(2).fill(0));
@@ -51,17 +51,20 @@ export class MsmGame implements IMsmGame {
   }
 
   // output the board row along the resolution arrays
-  public async outputBoard(): Promise<void> {
-    this.noConsoleOutput || console.log(this.answer);
-    for (let i = 0; i < this.rows; i++) {
-      // hide empty rows (filled with nulls)
-      if (this.board[i].every(num => num === null)) {
-        continue;
+  public async outputBoard(forceOutput?: boolean): Promise<void> {
+    if (forceOutput || !this.noConsoleOutput) {
+      console.log(this.answer);
+      for (let i = 0; i < this.rows; i++) {
+        // hide empty rows (filled with nulls)
+        if (this.board[i].every(num => num === null)) {
+          continue;
+        }
+        console.log(this.board[i], this.resolution[i], this.remainingAnswersCount[i] || "");
       }
-      this.noConsoleOutput || console.log(this.board[i], this.resolution[i], this.remainingAnswersCount[i] || "");
+      // line to separate the output from the next game
+      console.log("--------------------");
     }
-    // line to separate the output from the next game
-    this.noConsoleOutput || console.log("--------------------");
+
   }
   // set the answer with or without duplicates colors
   public async setAnswer(answerProvided?: number[]): Promise<void> {
@@ -99,6 +102,12 @@ export class MsmGame implements IMsmGame {
   // answers a resolution board row
   public async answerResolutionBoardRow(boardRow: number): Promise<void> {
     this.resolution[boardRow] = await this.evaluateRow(this.board[boardRow]);
+    // if the game is solved
+    if (this.resolution[boardRow][0] === 0 && this.resolution[boardRow][1] === this.columns) {
+      this.status = "won";
+    } else {
+      this.status = "lost";
+    }
   }
   // resolution board for all board rows
   public async answerResolutionBoardAll(): Promise<void> {
@@ -133,7 +142,7 @@ export class MsmGame implements IMsmGame {
     // duplicate the available colors array to a new array
     const duplicatedColors = [...this.availableColors];
     const allPossibleAnswers: number[][] = [];
-    
+
     if (!allowDuplicates) {
       const generatePermutations = (currentRow: number[], remainingColors: number[]): void => {
         if (currentRow.length === this.columns) {
@@ -225,6 +234,7 @@ export class MsmGame implements IMsmGame {
   // run game full resolution sequence
   public async runGameSequence(): Promise<void> {
     // Welcome in green
+    this.status = "playing";
     this.noConsoleOutput || console.log("\x1b[32mStarting game sequence...\x1b[0m");
     await this.setAnswer();
     await this.setAllRemainingAnswers(this.allowDuplicates);
@@ -236,17 +246,20 @@ export class MsmGame implements IMsmGame {
       if (!this.allRemainingAnswers.some(remaining => remaining.every((color, index) => color === this.answer[index]))) {
         throw new Error("Answer has been erroneously eliminated from remaining answers, answer: " + this.answer);
       }
-      // check for inclusion
       if (await this.makeATry()) {
         break;
       }
       this.attempts++;
     }
-    this.noConsoleOutput || console.log("Game solved in ", this.attempts + 1, " tries");
+    this.noConsoleOutput || console.log("Game solved in ", this.attempts + 1, " tries, result:", this.status);
+    // if lost display the board
+    //if (this.status == "lost") {
+      //this.outputBoard(true);
+    //}
   }
   // function to remove an answer by value from all remaining answers only if not the last remaining answer
   public removeAnswer(answer: number[]): void {
-    if(this.allRemainingAnswers.length > 1) {
+    if (this.allRemainingAnswers.length > 1) {
       const index = this.allRemainingAnswers.indexOf(answer);
       this.allRemainingAnswers.splice(index, 1);
     }
