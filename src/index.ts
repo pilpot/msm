@@ -50,7 +50,7 @@ async function runBenchmark(numGames: number): Promise<void> {
 
     totalAttempts += attempts;
     totalTime += time;
-    await db.update(({ games }) => games.push({ attemps: attempts, time: time, board: game.board, resolution: game.resolution, answer: game.answer, status: game.status }));
+    //await db.update(({ games }) => games.push({ attemps: attempts, time: time, board: game.board, resolution: game.resolution, answer: game.answer, status: game.status }));
     bar1.update(i + 1);
   }
 
@@ -69,4 +69,4 @@ async function runBenchmark(numGames: number): Promise<void> {
   console.log(`The script used approximately \x1b[34m${Math.round(usedMemory * 100) / 100} MB\x1b[0m`);
 }
 
-await runBenchmark(1000);
+await runBenchmark(10000);

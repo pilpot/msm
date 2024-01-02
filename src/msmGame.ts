@@ -1,36 +1,52 @@
-// msmGame2.ts
+// #region Interfaces (1)
+
+// msmGame.ts
 interface IMsmGame {
-  status: 'idle' | 'playing' | 'won' | 'lost';
-  board: number[][];
-  resolution: number[][];
-  remainingAnswersCount: number[];
-  answer: number[];
-  rows: number;
-  allowDuplicates: boolean;
-  guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites';
-  columns: number;
-  colors: number;
-  availableColors: number[];
+  // #region Properties (14)
+
   allRemainingAnswers: number[][];
-  noConsoleOutput: boolean;
+  allowDuplicates: boolean;
+  answer: number[];
   attempts: number;
+  availableColors: number[];
+  board: number[][];
+  colors: number;
+  columns: number;
+  guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites';
+  noConsoleOutput: boolean;
+  remainingAnswersCount: number[];
+  resolution: number[][];
+  rows: number;
+  status: 'idle' | 'playing' | 'won' | 'lost';
+
+  // #endregion Properties (14)
 }
 
+// #endregion Interfaces (1)
+
+// #region Classes (1)
+
 export class MsmGame implements IMsmGame {
-  public status: 'idle' | 'playing' | 'won' | 'lost';
-  public board: number[][];
-  public resolution: number[][];
-  public remainingAnswersCount: number[];
-  public answer: number[];
-  public rows: number;
-  public allowDuplicates: boolean;
-  public guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites';
-  public columns: number;
-  public colors: number;
-  public availableColors: number[];
+  // #region Properties (14)
+
   public allRemainingAnswers: number[][];
-  public noConsoleOutput: boolean;
+  public allowDuplicates: boolean;
+  public answer: number[];
   public attempts: number;
+  public availableColors: number[];
+  public board: number[][];
+  public colors: number;
+  public columns: number;
+  public guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites';
+  public noConsoleOutput: boolean;
+  public remainingAnswersCount: number[];
+  public resolution: number[][];
+  public rows: number;
+  public status: 'idle' | 'playing' | 'won' | 'lost';
+
+  // #endregion Properties (14)
+
+  // #region Constructors (1)
 
   constructor(colors?: number, columns?: number, rows?: number, allowDuplicates?: boolean, guessAlgorithm?: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites') {
     this.columns = columns ?? 5;
@@ -50,49 +66,25 @@ export class MsmGame implements IMsmGame {
     this.attempts = 0;
   }
 
-  // output the board row along the resolution arrays
-  public async outputBoard(forceOutput?: boolean): Promise<void> {
-    if (forceOutput || !this.noConsoleOutput) {
-      console.log(this.answer);
-      for (let i = 0; i < this.board.length; i++) {
-        console.log(this.board[i], this.resolution[i], this.remainingAnswersCount[i] || "");
-      }
-      // line to separate the output from the next game
-      console.log("--------------------");
-    }
+  // #endregion Constructors (1)
 
-  }
-  // set the answer with or without duplicates colors
-  public async setAnswer(answerProvided?: number[]): Promise<void> {
-    // alert if answer provided contains duplicates and allowDuplicates is false
-    if (answerProvided && answerProvided.some((num, i) => answerProvided.indexOf(num) !== i) && !this.allowDuplicates) {
-      console.log("Answer provided contains duplicates and allowDuplicates is false, answer provided: ", answerProvided);
-    }
+  // #region Public Methods (20)
 
-    if (answerProvided) {
-      this.answer = answerProvided;
-    } else {
-      this.answer = this.generateRandomRow(this.allowDuplicates);
-    }
+  // Add a row to the board
+  public addBoardRow(): void {
+    this.board.push(Array(this.columns).fill(null));
   }
 
-  // evaluates a single row and returns the count of white and black pins as promise
-  public async evaluateRow(row: number[]): Promise<[number, number]> {
-    let whitePins = 0;
-    let blackPins = 0;
-    const answerSet = new Set(this.answer);
+  // Add a row to the resolution
+  public addResolutionRow(): void {
+    this.resolution.push([0, 0]);
+  }
 
-    for (let j = 0; j < this.columns; j++) {
-      if (row[j] !== this.answer[j]) {
-        if (answerSet.has(row[j])) {
-          whitePins++;
-        }
-      } else {
-        blackPins++;
-      }
+  // resolution board for all board rows
+  public async answerResolutionBoardAll(): Promise<void> {
+    for (let i = 0; i < this.board.length; i++) {
+      await this.answerResolutionBoardRow(i);
     }
-
-    return [whitePins, blackPins];
   }
 
   // answers a resolution board row
@@ -105,84 +97,25 @@ export class MsmGame implements IMsmGame {
       this.status = "lost";
     }
   }
-  // resolution board for all board rows
-  public async answerResolutionBoardAll(): Promise<void> {
-    for (let i = 0; i < this.board.length; i++) {
-      await this.answerResolutionBoardRow(i);
-    }
-  }
-  public async setBoardRow(row: number, content: number[]): Promise<void> {
-    // if the row doesn't exist, push an empty one at the end
-    if (!this.board[row]) {
-      this.board[row] = [];
-    }
-    this.board[row] = content;
-  }
-  // returns a new random row
-  public generateRandomRow(allowDuplicates: boolean): number[] {
-    let colorsToPick = [...this.availableColors]; // copy of this.availableColors;
-    const row = [];
-    if (!allowDuplicates) {
-      for (let i = 0; i < this.columns; i++) {
-        const colorIndex = Math.floor(Math.random() * colorsToPick.length);
-        row[i] = colorsToPick.splice(colorIndex, 1)[0];
-      }
-    } else {
-      for (let i = 0; i < this.columns; i++) {
-        // select from colorsToPick
-        const colorIndex = Math.floor(Math.random() * colorsToPick.length);
-        row[i] = colorsToPick.splice(colorIndex, 1)[0];
+
+  public countLeastCommonColors(answerA: number[], answerB: number[]): number {
+    let count = 0;
+    for (let i = 0; i < answerA.length; i++) {
+      if (answerA[i] === answerB[i]) {
+        count++;
       }
     }
-
-    return row;
+    return answerA.length - count;
   }
-  // Generates an array with all possible answers with or without duplicate color in the same row
-  public async generateAllPossibleAnswers(allowDuplicates: boolean): Promise<number[][]> {
-    // duplicate the available colors array to a new array
-    const duplicatedColors = [...this.availableColors];
-    const allPossibleAnswers: number[][] = [];
 
-    if (!allowDuplicates) {
-      const generatePermutations = (currentRow: number[], remainingColors: number[]): void => {
-        if (currentRow.length === this.columns) {
-          allPossibleAnswers.push(currentRow);
-          return;
-        }
-
-        for (let i = 0; i < remainingColors.length; i++) {
-          const color = remainingColors[i];
-          const newRemainingColors = remainingColors.filter((_, index) => index !== i);
-          generatePermutations([...currentRow, color], newRemainingColors);
-        }
-      };
-
-      generatePermutations([], duplicatedColors);
-    } else {
-      // Generates an array with all possible answers allowing duplicate color in the same row
-      const generateDuplicates = (currentRow: number[], remainingColors: number[]): void => {
-        if (currentRow.length === this.columns) {
-          allPossibleAnswers.push(currentRow);
-          return;
-        }
-
-        for (let i = 0; i < remainingColors.length; i++) {
-          const color = remainingColors[i];
-          generateDuplicates([...currentRow, color], remainingColors);
-        }
-      };
-
-      generateDuplicates([], duplicatedColors);
-
+  public countSamePosition(answerA: number[], answerB: number[]): number {
+    let count = 0;
+    for (let i = 0; i < answerA.length; i++) {
+      if (answerA[i] === answerB[i]) {
+        count++;
+      }
     }
-    // why is this not included by the above?
-    // todo test generation of all possible answers
-    allPossibleAnswers.push([8, 7, 6, 5, 4]);
-    return allPossibleAnswers;
-  }
-
-  public async setAllRemainingAnswers(allowDuplicates: boolean): Promise<void> {
-    this.allRemainingAnswers = await this.generateAllPossibleAnswers(allowDuplicates);
+    return count;
   }
 
   // for a row in the board eliminates from the remaining answers the ones that doens't match white pins and black pins criteria
@@ -229,50 +162,25 @@ export class MsmGame implements IMsmGame {
       this.allRemainingAnswers.splice(j, 1);
       j--; // Adjust the index after removing an element
     }
-
   }
-  // run game full resolution sequence
-  public async runGameSequence(): Promise<void> {
-    // Welcome in green
-    this.status = "playing";
-    this.noConsoleOutput || console.log("\x1b[32mStarting game sequence...\x1b[0m");
-    await this.setAnswer();
-    await this.setAllRemainingAnswers(this.allowDuplicates);
-    this.noConsoleOutput || console.log("Colors count: ", this.colors, " Columns count: ", this.columns, " Max Rows count: ", this.rows);
-    this.noConsoleOutput || console.log("Guess algorithm: ", this.guessAlgorithm);
-    this.noConsoleOutput || console.log("Starting answers count: ", this.allRemainingAnswers.length);
 
-    while (this.attempts < this.rows && this.resolution[this.attempts][1] < this.columns) {
-      if (!this.allRemainingAnswers.some(remaining => remaining.every((color, index) => color === this.answer[index]))) {
-        throw new Error("Answer has been erroneously eliminated from remaining answers, answer: " + this.answer);
+  // evaluates a single row and returns the count of white and black pins as promise
+  public async evaluateRow(row: number[]): Promise<[number, number]> {
+    let whitePins = 0;
+    let blackPins = 0;
+    const answerSet = new Set(this.answer);
+
+    for (let j = 0; j < this.columns; j++) {
+      if (row[j] !== this.answer[j]) {
+        if (answerSet.has(row[j])) {
+          whitePins++;
+        }
+      } else {
+        blackPins++;
       }
-      if (await this.makeATry()) {
-        break;
-      }
-      this.attempts++;
     }
-    this.noConsoleOutput || console.log("Game solved in ", this.attempts + 1, " tries, result:", this.status);
-    // if lost display the board
-    //if (this.status == "lost") {
-    //this.outputBoard(true);
-    //}
-  }
-  // function to remove an answer by value from all remaining answers only if not the last remaining answer
-  public removeAnswer(answer: number[]): void {
-    if (this.allRemainingAnswers.length > 1) {
-      const index = this.allRemainingAnswers.indexOf(answer);
-      this.allRemainingAnswers.splice(index, 1);
-    }
-  }
 
-  // Add a row to the board
-  public addBoardRow(): void {
-    this.board.push(Array(this.columns).fill(null));
-  }
-
-  // Add a row to the resolution
-  public addResolutionRow(): void {
-    this.resolution.push([0, 0]);
+    return [whitePins, blackPins];
   }
 
   // find recursively the answer that select the answer with the least similarity
@@ -291,10 +199,72 @@ export class MsmGame implements IMsmGame {
         optimalSimilarity = similarity;
         optimalAnswer = answer;
       }
-      
   } 
   return optimalAnswer;
 }
+
+  // Generates an array with all possible answers with or without duplicate color in the same row
+  public async generateAllPossibleAnswers(allowDuplicates: boolean): Promise<number[][]> {
+    // duplicate the available colors array to a new array
+    const duplicatedColors = [...this.availableColors];
+    const allPossibleAnswers: number[][] = [];
+
+    if (!allowDuplicates) {
+      const generatePermutations = (currentRow: number[], remainingColors: number[]): void => {
+        if (currentRow.length === this.columns) {
+          allPossibleAnswers.push(currentRow);
+          return;
+        }
+
+        for (let i = 0; i < remainingColors.length; i++) {
+          const color = remainingColors[i];
+          const newRemainingColors = remainingColors.filter((_, index) => index !== i);
+          generatePermutations([...currentRow, color], newRemainingColors);
+        }
+      };
+
+      generatePermutations([], duplicatedColors);
+    } else {
+      // Generates an array with all possible answers allowing duplicate color in the same row
+      const generateDuplicates = (currentRow: number[], remainingColors: number[]): void => {
+        if (currentRow.length === this.columns) {
+          allPossibleAnswers.push(currentRow);
+          return;
+        }
+
+        for (let i = 0; i < remainingColors.length; i++) {
+          const color = remainingColors[i];
+          generateDuplicates([...currentRow, color], remainingColors);
+        }
+      };
+
+      generateDuplicates([], duplicatedColors);
+    }
+    // why is this not included by the above?
+    // todo test generation of all possible answers
+    allPossibleAnswers.push([8, 7, 6, 5, 4]);
+    return allPossibleAnswers;
+  }
+
+  // returns a new random row
+  public generateRandomRow(allowDuplicates: boolean): number[] {
+    let colorsToPick = [...this.availableColors]; // copy of this.availableColors;
+    const row = [];
+    if (!allowDuplicates) {
+      for (let i = 0; i < this.columns; i++) {
+        const colorIndex = Math.floor(Math.random() * colorsToPick.length);
+        row[i] = colorsToPick.splice(colorIndex, 1)[0];
+      }
+    } else {
+      for (let i = 0; i < this.columns; i++) {
+        // select from colorsToPick
+        const colorIndex = Math.floor(Math.random() * colorsToPick.length);
+        row[i] = colorsToPick.splice(colorIndex, 1)[0];
+      }
+    }
+
+    return row;
+  }
 
   // make a try following the guess algorithm
   public async makeATry(): Promise<boolean> {
@@ -354,7 +324,6 @@ export class MsmGame implements IMsmGame {
     await this.answerResolutionBoardRow(emptyRowIndex);
     await this.eliminateAnswers(emptyRowIndex);
 
-
     if (this.resolution[emptyRowIndex][1] == this.columns) {
       await this.outputBoard();
       return true;
@@ -368,6 +337,79 @@ export class MsmGame implements IMsmGame {
     return false;
   }
 
+  // output the board row along the resolution arrays
+  public async outputBoard(forceOutput?: boolean): Promise<void> {
+    if (forceOutput || !this.noConsoleOutput) {
+      console.log(this.answer);
+      for (let i = 0; i < this.board.length; i++) {
+        console.log(this.board[i], this.resolution[i], this.remainingAnswersCount[i] || "");
+      }
+      // line to separate the output from the next game
+      console.log("--------------------");
+    }
+  }
+
+  // function to remove an answer by value from all remaining answers only if not the last remaining answer
+  public removeAnswer(answer: number[]): void {
+    if (this.allRemainingAnswers.length > 1) {
+      const index = this.allRemainingAnswers.indexOf(answer);
+      this.allRemainingAnswers.splice(index, 1);
+    }
+  }
+
+  // run game full resolution sequence
+  public async runGameSequence(): Promise<void> {
+    // Welcome in green
+    this.status = "playing";
+    this.noConsoleOutput || console.log("\x1b[32mStarting game sequence...\x1b[0m");
+    await this.setAnswer();
+    await this.setAllRemainingAnswers(this.allowDuplicates);
+    this.noConsoleOutput || console.log("Colors count: ", this.colors, " Columns count: ", this.columns, " Max Rows count: ", this.rows);
+    this.noConsoleOutput || console.log("Guess algorithm: ", this.guessAlgorithm);
+    this.noConsoleOutput || console.log("Starting answers count: ", this.allRemainingAnswers.length);
+
+    while (this.attempts < this.rows && this.resolution[this.attempts][1] < this.columns) {
+      if (!this.allRemainingAnswers.some(remaining => remaining.every((color, index) => color === this.answer[index]))) {
+        throw new Error("Answer has been erroneously eliminated from remaining answers, answer: " + this.answer);
+      }
+      if (await this.makeATry()) {
+        break;
+      }
+      this.attempts++;
+    }
+    this.noConsoleOutput || console.log("Game solved in ", this.attempts + 1, " tries, result:", this.status);
+    // if lost display the board
+    //if (this.status == "lost") {
+    //this.outputBoard(true);
+    //}
+  }
+
+  public async setAllRemainingAnswers(allowDuplicates: boolean): Promise<void> {
+    this.allRemainingAnswers = await this.generateAllPossibleAnswers(allowDuplicates);
+  }
+
+  // set the answer with or without duplicates colors
+  public async setAnswer(answerProvided?: number[]): Promise<void> {
+    // alert if answer provided contains duplicates and allowDuplicates is false
+    if (answerProvided && answerProvided.some((num, i) => answerProvided.indexOf(num) !== i) && !this.allowDuplicates) {
+      console.log("Answer provided contains duplicates and allowDuplicates is false, answer provided: ", answerProvided);
+    }
+
+    if (answerProvided) {
+      this.answer = answerProvided;
+    } else {
+      this.answer = this.generateRandomRow(this.allowDuplicates);
+    }
+  }
+
+  public async setBoardRow(row: number, content: number[]): Promise<void> {
+    // if the row doesn't exist, push an empty one at the end
+    if (!this.board[row]) {
+      this.board[row] = [];
+    }
+    this.board[row] = content;
+  }
+
   public sortByLeastCommonColors(previousAnswer: number[], remainingAnswers: number[][]): number[][] {
     return remainingAnswers.sort((a, b) => {
       const leastCommonColorsA = this.countLeastCommonColors(previousAnswer, a);
@@ -375,15 +417,7 @@ export class MsmGame implements IMsmGame {
       return leastCommonColorsA - leastCommonColorsB;
     });
   }
-  public countLeastCommonColors(answerA: number[], answerB: number[]): number {
-    let count = 0;
-    for (let i = 0; i < answerA.length; i++) {
-      if (answerA[i] === answerB[i]) {
-        count++;
-      }
-    }
-    return answerA.length - count;
-  }
+
   public sortBySamePosition(previousAnswer: number[], remainingAnswers: number[][]): number[][] {
     return remainingAnswers.sort((a, b) => {
       const samePositionA = this.countSamePosition(previousAnswer, a);
@@ -391,13 +425,8 @@ export class MsmGame implements IMsmGame {
       return samePositionB - samePositionA;
     });
   }
-  public countSamePosition(answerA: number[], answerB: number[]): number {
-    let count = 0;
-    for (let i = 0; i < answerA.length; i++) {
-      if (answerA[i] === answerB[i]) {
-        count++;
-      }
-    }
-    return count;
-  }
+
+  // #endregion Public Methods (20)
 }
+
+// #endregion Classes (1)
