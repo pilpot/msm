@@ -1,9 +1,5 @@
-// #region Interfaces (1)
-
 // msmGame.ts
 interface IMsmGame {
-  // #region Properties (14)
-
   allRemainingAnswers: number[][];
   allowDuplicates: boolean;
   answer: number[];
@@ -18,17 +14,9 @@ interface IMsmGame {
   resolution: number[][];
   rows: number;
   status: 'idle' | 'playing' | 'won' | 'lost';
-
-  // #endregion Properties (14)
 }
 
-// #endregion Interfaces (1)
-
-// #region Classes (1)
-
 export class MsmGame implements IMsmGame {
-  // #region Properties (14)
-
   public allRemainingAnswers: number[][];
   public allowDuplicates: boolean;
   public answer: number[];
@@ -43,10 +31,6 @@ export class MsmGame implements IMsmGame {
   public resolution: number[][];
   public rows: number;
   public status: 'idle' | 'playing' | 'won' | 'lost';
-
-  // #endregion Properties (14)
-
-  // #region Constructors (1)
 
   constructor(colors?: number, columns?: number, rows?: number, allowDuplicates?: boolean, guessAlgorithm?: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites') {
     this.columns = columns ?? 5;
@@ -65,10 +49,6 @@ export class MsmGame implements IMsmGame {
     this.noConsoleOutput = false;
     this.attempts = 0;
   }
-
-  // #endregion Constructors (1)
-
-  // #region Public Methods (20)
 
   // Add a row to the board
   public addBoardRow(): void {
@@ -199,9 +179,9 @@ export class MsmGame implements IMsmGame {
         optimalSimilarity = similarity;
         optimalAnswer = answer;
       }
-  } 
-  return optimalAnswer;
-}
+    }
+    return optimalAnswer;
+  }
 
   // Generates an array with all possible answers with or without duplicate color in the same row
   public async generateAllPossibleAnswers(allowDuplicates: boolean): Promise<number[][]> {
@@ -426,7 +406,4 @@ export class MsmGame implements IMsmGame {
     });
   }
 
-  // #endregion Public Methods (20)
 }
-
-// #endregion Classes (1)
