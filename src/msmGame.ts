@@ -39,8 +39,8 @@ export class MsmGame implements IMsmGame {
     this.availableColors = Array.from({ length: this.colors }, (_, i) => i + 1);
     // value of availableColors is 1-8 for 8 colors
     this.status = 'idle';
-    this.board = Array(this.rows).fill(null).map(() => Array(this.colors).fill(null));
-    this.resolution = Array(this.rows).fill(null).map(() => Array(2).fill(0));
+    this.board = Array(1).fill(null).map(() => Array(this.colors).fill(null));
+    this.resolution = Array(1).fill(null).map(() => Array(2).fill(0));
     this.remainingAnswersCount = Array(this.rows).fill(0);
     this.answer = Array(this.columns).fill(0);
     this.allowDuplicates = allowDuplicates ?? true;
@@ -54,11 +54,7 @@ export class MsmGame implements IMsmGame {
   public async outputBoard(forceOutput?: boolean): Promise<void> {
     if (forceOutput || !this.noConsoleOutput) {
       console.log(this.answer);
-      for (let i = 0; i < this.rows; i++) {
-        // hide empty rows (filled with nulls)
-        if (this.board[i].every(num => num === null)) {
-          continue;
-        }
+      for (let i = 0; i < this.board.length; i++) {
         console.log(this.board[i], this.resolution[i], this.remainingAnswersCount[i] || "");
       }
       // line to separate the output from the next game
@@ -116,6 +112,10 @@ export class MsmGame implements IMsmGame {
     }
   }
   public async setBoardRow(row: number, content: number[]): Promise<void> {
+    // if the row doesn't exist, push an empty one at the end
+    if (!this.board[row]) {
+      this.board[row] = [];
+    }
     this.board[row] = content;
   }
   // returns a new random row
@@ -254,7 +254,7 @@ export class MsmGame implements IMsmGame {
     this.noConsoleOutput || console.log("Game solved in ", this.attempts + 1, " tries, result:", this.status);
     // if lost display the board
     //if (this.status == "lost") {
-      //this.outputBoard(true);
+    //this.outputBoard(true);
     //}
   }
   // function to remove an answer by value from all remaining answers only if not the last remaining answer
@@ -264,9 +264,20 @@ export class MsmGame implements IMsmGame {
       this.allRemainingAnswers.splice(index, 1);
     }
   }
+
+  // Add a row to the board
+  public addBoardRow(): void {
+    this.board.push(Array(this.columns).fill(null));
+  }
+
+  // Add a row to the resolution
+  public addResolutionRow(): void {
+    this.resolution.push([0, 0]);
+  }
+
   // make a try following the guess algorithm
   public async makeATry(): Promise<boolean> {
-    // Make random try finding the first row empty (filled with zeroes)in the board
+    // Make random try finding the first row empty (filled with null)in the board
     let emptyRowIndex = -1;
     for (let i = 0; i < this.rows; i++) {
       if (this.board[i].every(num => num === null)) {
@@ -327,6 +338,11 @@ export class MsmGame implements IMsmGame {
       // last board row is the correct answer
       // console.log(this.board[emptyRowIndex] , " is the correct answer");
       return true;
+    }
+    // if board is smaller than rows, add a row for next try
+    if (this.board.length < this.rows) {
+      this.addBoardRow();
+      this.addResolutionRow();
     }
     this.remainingAnswersCount[emptyRowIndex] = this.allRemainingAnswers.length;
     return false;

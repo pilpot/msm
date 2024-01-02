@@ -35,7 +35,7 @@ async function runBenchmark(numGames: number): Promise<void> {
     const attempts: number = game.attempts;
     attemptsCountArray[attempts]++;
 
-    if(game.status === 'won') {
+    if (game.status === 'won') {
       wonCount++;
     } else if (game.status === 'lost') {
       lostCount++;
@@ -60,4 +60,4 @@ async function runBenchmark(numGames: number): Promise<void> {
   console.log(`The script used approximately ${Math.round(usedMemory * 100) / 100} MB`);
 }
 
-await runBenchmark(100);
+await runBenchmark(10000);
