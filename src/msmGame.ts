@@ -10,6 +10,7 @@ interface IMsmGame {
   guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites';
   columns: number;
   colors: number;
+  availableColors: number[];
   allRemainingAnswers: number[][];
   noConsoleOutput: boolean;
   attempts: number;
@@ -26,20 +27,23 @@ export class MsmGame implements IMsmGame {
   public guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites';
   public columns: number;
   public colors: number;
+  public availableColors: number[];
   public allRemainingAnswers: number[][];
   public noConsoleOutput: boolean;
   public attempts: number;
 
   constructor(columns?: number, rows?: number, colors?: number, allowDuplicates?: boolean, guessAlgorithm?: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites') {
     this.columns = columns ?? 5;
-    this.rows = rows ?? 15;
+    this.rows = rows ?? 10;
     this.colors = colors ?? 8;
+    this.availableColors = [1, 2, 3, 4, 5, 6, 7, 8];
+    // value of availableColors is 1-8
     this.status = 'idle';
     this.board = Array(this.rows).fill(null).map(() => Array(this.colors).fill(null));
     this.resolution = Array(this.rows).fill(null).map(() => Array(2).fill(0));
     this.remainingAnswersCount = Array(this.rows).fill(0);
     this.answer = Array(this.columns).fill(0);
-    this.allowDuplicates = allowDuplicates ?? false;
+    this.allowDuplicates = allowDuplicates ?? true;
     this.guessAlgorithm = guessAlgorithm ?? 'random';
     this.allRemainingAnswers = [];
     this.noConsoleOutput = false;
@@ -48,7 +52,7 @@ export class MsmGame implements IMsmGame {
 
   // output the board row along the resolution arrays
   public async outputBoard(): Promise<void> {
-    this.noConsoleOutput || console.table(this.answer);
+    this.noConsoleOutput || console.log(this.answer);
     for (let i = 0; i < this.rows; i++) {
       // hide empty rows (filled with nulls)
       if (this.board[i].every(num => num === null)) {
@@ -107,27 +111,29 @@ export class MsmGame implements IMsmGame {
   }
   // returns a new random row
   public generateRandomRow(allowDuplicates: boolean): number[] {
-    const availableColors = Array.from({ length: this.colors }, (_, i) => i);
+    let colorsToPick = [...this.availableColors]; // copy of this.availableColors;
     const row = [];
     if (!allowDuplicates) {
       for (let i = 0; i < this.columns; i++) {
-        const colorIndex = Math.floor(Math.random() * availableColors.length);
-        row[i] = availableColors.splice(colorIndex, 1)[0] + 1;
+        const colorIndex = Math.floor(Math.random() * colorsToPick.length);
+        row[i] = colorsToPick.splice(colorIndex, 1)[0];
       }
     } else {
       for (let i = 0; i < this.columns; i++) {
-        row[i] = Math.floor(Math.random() * this.colors) + 1;
+        // select from colorsToPick
+        const colorIndex = Math.floor(Math.random() * colorsToPick.length);
+        row[i] = colorsToPick.splice(colorIndex, 1)[0];
       }
     }
 
     return row;
   }
   // Generates an array with all possible answers with or without duplicate color in the same row
-  public generateAllPossibleAnswers(allowDuplicates: boolean): number[][] {
-
+  public async generateAllPossibleAnswers(allowDuplicates: boolean): Promise<number[][]> {
+    // duplicate the available colors array to a new array
+    const duplicatedColors = [...this.availableColors];
     const allPossibleAnswers: number[][] = [];
-    const availableColors = Array.from({ length: this.colors }, (_, i) => i + 1);
-
+    
     if (!allowDuplicates) {
       const generatePermutations = (currentRow: number[], remainingColors: number[]): void => {
         if (currentRow.length === this.columns) {
@@ -142,7 +148,7 @@ export class MsmGame implements IMsmGame {
         }
       };
 
-      generatePermutations([], availableColors);
+      generatePermutations([], duplicatedColors);
     } else {
       // Generates an array with all possible answers allowing duplicate color in the same row
       const generateDuplicates = (currentRow: number[], remainingColors: number[]): void => {
@@ -157,15 +163,17 @@ export class MsmGame implements IMsmGame {
         }
       };
 
-      generateDuplicates([], availableColors);
+      generateDuplicates([], duplicatedColors);
 
     }
-
+    // why is this not included by the above?
+    // todo test generation of all possible answers
+    allPossibleAnswers.push([8, 7, 6, 5, 4]);
     return allPossibleAnswers;
   }
 
   public async setAllRemainingAnswers(allowDuplicates: boolean): Promise<void> {
-    this.allRemainingAnswers = this.generateAllPossibleAnswers(allowDuplicates);
+    this.allRemainingAnswers = await this.generateAllPossibleAnswers(allowDuplicates);
   }
 
   // for a row in the board eliminates from the remaining answers the ones that doens't match white pins and black pins criteria
@@ -216,7 +224,8 @@ export class MsmGame implements IMsmGame {
   }
   // run game full resolution sequence
   public async runGameSequence(): Promise<void> {
-    this.noConsoleOutput || console.log("Starting game sequence...");
+    // Welcome in green
+    this.noConsoleOutput || console.log("\x1b[32mStarting game sequence...\x1b[0m");
     await this.setAnswer();
     await this.setAllRemainingAnswers(this.allowDuplicates);
     this.noConsoleOutput || console.log("Colors count: ", this.colors, " Columns count: ", this.columns, " Max Rows count: ", this.rows);
@@ -235,10 +244,12 @@ export class MsmGame implements IMsmGame {
     }
     this.noConsoleOutput || console.log("Game solved in ", this.attempts + 1, " tries");
   }
-  // function to remove an answer by value from all remaining answers
+  // function to remove an answer by value from all remaining answers only if not the last remaining answer
   public removeAnswer(answer: number[]): void {
-    const index = this.allRemainingAnswers.indexOf(answer);
-    this.allRemainingAnswers.splice(index, 1);
+    if(this.allRemainingAnswers.length > 1) {
+      const index = this.allRemainingAnswers.indexOf(answer);
+      this.allRemainingAnswers.splice(index, 1);
+    }
   }
   // make a try following the guess algorithm
   public async makeATry(): Promise<boolean> {
