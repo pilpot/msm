@@ -275,36 +275,26 @@ export class MsmGame implements IMsmGame {
     this.resolution.push([0, 0]);
   }
 
-  // explore the remaining answers recursively to find the shortest path to the answer
-  public exploreRemainingAnswers(remainingAnswers: number[][], currentPath: number[][]): number[][] {
-    // Base case: if there are no more remaining answers, return the current path
-    if (remainingAnswers.length === 0) {
-      return currentPath;
-    }
-
-    let shortestPath: number[][] = [];
-
-    // Iterate through each remaining answer
-    for (let i = 0; i < remainingAnswers.length; i++) {
-      const answer = remainingAnswers[i];
-
-      // Create a copy of the current path and add the current answer to it
-      const newPath = [...currentPath, answer];
-
-      // Remove the current answer from the remaining answers
-      const updatedRemainingAnswers = [...remainingAnswers.slice(0, i), ...remainingAnswers.slice(i + 1)];
-
-      // Recursively explore the remaining answers with the updated path and remaining answers
-      const path = this.exploreRemainingAnswers(updatedRemainingAnswers, newPath);
-
-      // If the current path is shorter than the shortest path, update the shortest path
-      if (shortestPath.length === 0 || path.length < shortestPath.length) {
-        shortestPath = path;
+  // find recursively the answer that select the answer with the least similarity
+  public findOptimalAnswer(): number[] {
+    let optimalAnswer = this.allRemainingAnswers[0];
+    let optimalSimilarity = this.allRemainingAnswers[0].length;
+    for (let i = 0; i < this.allRemainingAnswers.length; i++) {
+      let answer = this.allRemainingAnswers[i];
+      let similarity = 0;
+      for (let j = 0; j < this.columns; j++) {
+        if (answer[j] === this.answer[j]) {
+          similarity++;
+        }
       }
-    }
-
-    return shortestPath;
-  }
+      if (similarity < optimalSimilarity) {
+        optimalSimilarity = similarity;
+        optimalAnswer = answer;
+      }
+      
+  } 
+  return optimalAnswer;
+}
 
   // make a try following the guess algorithm
   public async makeATry(): Promise<boolean> {
@@ -342,10 +332,9 @@ export class MsmGame implements IMsmGame {
     }
     // weight remaining answers by remaining answers count
     else if (this.guessAlgorithm === 'optimal') {
-      // todo
-      let shortestPath = this.exploreRemainingAnswers(this.allRemainingAnswers, []);
-      console.log("Shortest path:", shortestPath);
-      throw new Error("Not implemented");
+      // find the answer that elimanates the most remaining answers
+      const optimalAnswer = this.findOptimalAnswer();
+      await this.setBoardRow(emptyRowIndex, optimalAnswer);
     }
     // choose the remaining answer with the highest black pins count
     else if (this.guessAlgorithm === "moreBlacks") {
@@ -368,8 +357,6 @@ export class MsmGame implements IMsmGame {
 
     if (this.resolution[emptyRowIndex][1] == this.columns) {
       await this.outputBoard();
-      // last board row is the correct answer
-      // console.log(this.board[emptyRowIndex] , " is the correct answer");
       return true;
     }
     // if board is smaller than rows, add a row for next try
