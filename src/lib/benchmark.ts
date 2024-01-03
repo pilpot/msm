@@ -11,13 +11,13 @@ const babar = require('babar');
 async function runBenchmark(numGames: number): Promise<void> {
   let totalAttempts: number = 0, totalTime: number = 0;
   let wonCount: number = 0, lostCount: number = 0;
-  let boardRowsCount: number = 10;
-  let columnsCount: number = 5;
-  let colors: number = 8;
-  let allowDuplicates: boolean = false;
-  let guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites' = 'random';
-  let attemptsCountArray: number[] = Array(boardRowsCount + 1).fill(0);
-  let listOfAllResolutions: number[][][] = [];
+  const boardRowsCount: number = 10;
+  const columnsCount: number = 5;
+  const colors: number = 8;
+  const allowDuplicates: boolean = false;
+  const guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites' = 'random';
+  const attemptsCountArray: number[] = Array(boardRowsCount + 1).fill(0);
+  const listOfAllResolutions: number[][][] = [];
 
   // display a progress bar in cli while running
   console.log("Running benchmark...");
@@ -26,7 +26,7 @@ async function runBenchmark(numGames: number): Promise<void> {
 
   for (let i = 0; i < numGames; i++) {
     // create game with options
-    let game = new MsmGame(colors);
+    const game = new MsmGame(colors);
     game.allowDuplicates = allowDuplicates;
     game.noConsoleOutput = true;
     game.guessAlgorithm = guessAlgorithm;

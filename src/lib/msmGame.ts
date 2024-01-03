@@ -105,8 +105,8 @@ export class MsmGame implements IMsmGame {
       return;
     }
 
-    let totalPositionsInBoardRow = this.resolution[boardRow][1];
-    let totalColorsInBoardRow = this.resolution[boardRow][0] + this.resolution[boardRow][1];
+    const totalPositionsInBoardRow = this.resolution[boardRow][1];
+    const totalColorsInBoardRow = this.resolution[boardRow][0] + this.resolution[boardRow][1];
 
     // evaluate each remaining answer to see if it matches following criterias
     // - first : colors in the same place
@@ -115,7 +115,7 @@ export class MsmGame implements IMsmGame {
     // - second : global count of similar colors (total of black and white) in the regardless of the place in board row and answer
     // is must be at least the same count of total colors in the row
     for (let j = 0; j < this.allRemainingAnswers.length; j++) {
-      let answer = this.allRemainingAnswers[j];
+      const answer = this.allRemainingAnswers[j];
       let blackCount = 0;
       let whiteCount = 0;
 
@@ -166,7 +166,7 @@ export class MsmGame implements IMsmGame {
     let optimalAnswer = this.allRemainingAnswers[0];
     let optimalSimilarity = this.allRemainingAnswers[0].length;
     for (let i = 0; i < this.allRemainingAnswers.length; i++) {
-      let answer = this.allRemainingAnswers[i];
+      const answer = this.allRemainingAnswers[i];
       let similarity = 0;
       for (let j = 0; j < this.columns; j++) {
         if (answer[j] === this.answer[j]) {
@@ -226,7 +226,7 @@ export class MsmGame implements IMsmGame {
 
   // returns a new random row
   public generateRandomRow(allowDuplicates: boolean): number[] {
-    let colorsToPick = [...this.availableColors]; // copy of this.availableColors;
+    const colorsToPick = [...this.availableColors]; // copy of this.availableColors;
     const row = [];
     if (!allowDuplicates) {
       for (let i = 0; i < this.columns; i++) {
@@ -261,7 +261,7 @@ export class MsmGame implements IMsmGame {
     }
     // Make random try for the first row
     if (emptyRowIndex == 0) {
-      let randomRow: number[] = this.generateRandomRow(this.allowDuplicates);
+      const randomRow: number[] = this.generateRandomRow(this.allowDuplicates);
       await this.setBoardRow(emptyRowIndex, randomRow);
       this.removeAnswer(randomRow);
     }
