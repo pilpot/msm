@@ -17,6 +17,7 @@ async function runBenchmark(numGames: number): Promise<void> {
   let allowDuplicates: boolean = false;
   let guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites' = 'random';
   let attemptsCountArray: number[] = Array(boardRowsCount + 1).fill(0);
+  let listOfAllResolutions: number[][][] = [];
 
   // display a progress bar in cli while running
   console.log("Running benchmark...");
@@ -45,6 +46,13 @@ async function runBenchmark(numGames: number): Promise<void> {
     } else if (game.status === 'lost') {
       lostCount++;
     }
+    if(attempts < 2) {
+      //console.log("");
+      //game.outputBoard(true);
+      // copy the 2 first resolution rows
+      listOfAllResolutions.push(game.resolution.slice(0, 2));
+    }
+    
 
     const time: number = end - start;
 
@@ -57,11 +65,31 @@ async function runBenchmark(numGames: number): Promise<void> {
   const averageAttempts: number = totalAttempts / numGames;
   const averageTime: number = totalTime / numGames;
   bar1.stop();
+  //console.log(listOfAllResolutions);
+  // group by first resolution containing second resolution (if exists) and count reccurence
+  const groupedResolutions = listOfAllResolutions.reduce((acc, resolution) => {
+    const firstResolution = resolution[0].join('');
+    let secondResolution = "";
+    if(resolution.length > 1) {
+       secondResolution = resolution[1].join('');
+    }
+    
+    if (!acc[firstResolution]) {
+      acc[firstResolution] = [];
+    }
+    
+    acc[firstResolution].push(secondResolution);
+    
+    return acc;
+  }, {});
+
+  console.log(groupedResolutions);
+
   console.log("");
   console.log(`Total Games: \x1b[33m${numGames}\x1b[0m`);
   console.log(`Columns: \x1b[33m${columnsCount}\x1b[0m, Colors: \x1b[33m${colors}\x1b[0m, Rows: \x1b[33m${boardRowsCount}\x1b[0m`);
   console.log(`Duplicates: \x1b[33m${allowDuplicates? "Yes" : "No"}\x1b[0m, Guess Algorithm: \x1b[33m${guessAlgorithm}\x1b[0m`);
-  console.log(babar(attemptsCountArray.map((count, index) => [index, count]), { color : "green", caption : `Counf of games / Attemps` }));
+  console.log(babar(attemptsCountArray.map((count, index) => [index, count]), { color : "green", caption : `Count of games / Attemps` }));
   console.log(`Average Attempts: \x1b[33m${averageAttempts}\x1b[0m`);
   console.log(`Won: \x1b[32m${wonCount}\x1b[0m, Lost: \x1b[31m${lostCount}\x1b[0m`);
   console.log(`Average Time per Game: \x1b[34m${averageTime}ms\x1b[0m`);
@@ -69,4 +97,4 @@ async function runBenchmark(numGames: number): Promise<void> {
   console.log(`The script used approximately \x1b[34m${Math.round(usedMemory * 100) / 100} MB\x1b[0m`);
 }
 
-await runBenchmark(10000);
+await runBenchmark(50000);

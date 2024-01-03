@@ -119,15 +119,13 @@ export class MsmGame implements IMsmGame {
       let blackCount = 0;
       let whiteCount = 0;
 
-      // Check for colors in the same place
+      
       for (let k = 0; k < this.columns; k++) {
+        // Check for colors in the same place
         if (answer[k] === this.board[boardRow][k]) {
           blackCount++;
         }
-      }
-
-      // Check for global count of similar colors
-      for (let k = 0; k < this.columns; k++) {
+        // Check for global count of similar colors
         if (answer.includes(this.board[boardRow][k])) {
           whiteCount++;
         }
@@ -237,9 +235,9 @@ export class MsmGame implements IMsmGame {
       }
     } else {
       for (let i = 0; i < this.columns; i++) {
-        // select from colorsToPick
+        // pick a random color
         const colorIndex = Math.floor(Math.random() * colorsToPick.length);
-        row[i] = colorsToPick.splice(colorIndex, 1)[0];
+        row[i] = colorsToPick[colorIndex];
       }
     }
 
