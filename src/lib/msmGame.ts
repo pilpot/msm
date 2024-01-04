@@ -335,8 +335,18 @@ export class MsmGame implements IMsmGame {
     }
   }
 
+  public resetGame(): void {
+    this.status = "idle";
+    this.attempts = 0;
+    this.board = Array(1).fill(null).map(() => Array(this.colors).fill(null));
+    this.resolution = Array(1).fill(null).map(() => Array(2).fill(0));
+    this.remainingAnswersCount = Array(this.rows).fill(0);
+    this.answer = Array(this.columns).fill(0);
+  }
+
   // run game full resolution sequence
-  public async runGameSequence(): Promise<void> {
+  runGameSequence = async () => {
+    this.resetGame();
     // Welcome in green
     this.status = "playing";
     this.noConsoleOutput || console.log("\x1b[32mStarting game sequence...\x1b[0m");
