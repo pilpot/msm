@@ -1,5 +1,5 @@
 <script lang="ts">
-  // @ts-ignore
+	// @ts-ignore
 	import { Card, Divider } from 'attractions';
 	import GameBoardRow from './gameBoardRow.svelte';
 	import GameBoardAnswer from './gameBoardAnswer.svelte';
@@ -10,11 +10,11 @@
 	export let answer: number[];
 	export let sessionId: string;
 	export let colors: string[];
-  export let status: 'idle' | 'playing' | 'won' | 'lost';
+	export let status: 'idle' | 'playing' | 'won' | 'lost';
 </script>
 
 <Card class="gameBoard">
-  {#if status === 'won'}Well done!<Divider />{/if}
+	{#if status === 'won'}Well done!<Divider />{/if}
 	<GameBoardAnswer {answer} />
 	<Divider />
 	{#each boardGuesses as guess, i}
@@ -35,6 +35,6 @@
 		background-color: #ccc !important;
 		padding: 10px;
 		width: 400px;
-    overflow: visible!important;
+		overflow: visible !important;
 	}
 </style>

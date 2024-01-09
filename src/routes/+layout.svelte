@@ -1,17 +1,22 @@
 <script>
-  // @ts-ignore
-  import { Headline } from 'attractions';
+	// @ts-ignore
+	import { Headline } from 'attractions';
 </script>
+
 <svelte:head>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@600&display=swap" rel="stylesheet">
-  <title>MasterSuperMind</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin" />
+	<link
+		href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@600&display=swap"
+		rel="stylesheet"
+	/>
+	<title>MasterSuperMind</title>
 </svelte:head>
-<style>
-  :global(body) {
-    font-family: 'Noto Sans', sans-serif;
-  }
-</style> 
 <Headline>MasterSuperMind</Headline>
 <slot />
+
+<style>
+	:global(body) {
+		font-family: 'Noto Sans', sans-serif;
+	}
+</style>

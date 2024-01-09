@@ -12,10 +12,10 @@
 </div>
 
 <style>
-  .answerRow {
-    display: flex;
+	.answerRow {
+		display: flex;
 		align-items: baseline;
 		justify-content: space-around;
 		width: 150px;
-  }
+	}
 </style>

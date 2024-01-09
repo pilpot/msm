@@ -135,12 +135,7 @@
 	</div>
 
 	{#if ddActive}
-		<div
-			class:top
-			bind:clientHeight={ddHeight}
-			class="values-dropdown"
-			use:clickOutside
-		>
+		<div class:top bind:clientHeight={ddHeight} class="values-dropdown" use:clickOutside>
 			<div class="values-dropdown-grid">
 				{#each colors as val, index}
 					{#if index !== 0}
