@@ -1,13 +1,14 @@
 <script lang="ts">
+	// @ts-ignore
 	import { Headline, Subhead, Button, Card, Dot, Divider, Label, Slider, H1 } from 'attractions';
 	export let data;
   $: game = data.game;
 </script>
 
-<Headline>MasterSuperMind</Headline>
 <Subhead>Here is a solved game for you :)</Subhead>
 <br />
 <!-- Implement the display of a game object here-->
+<div class="gamePanel">
 <Card class="board">
 	<div class="answerrow">
   {#key game.answer}
@@ -53,8 +54,7 @@
 		<Label>I {game.status} this game in {game.attempts + 1} attempts</Label>
 	</div>
 </Card>
-<br />
-<Card style="max-width: 280px;">
+<Card style="max-width: 280px; display: inline-block">
 	<H1>Options</H1>
 	<Label small>Colors</Label>
 	<Slider
@@ -78,13 +78,13 @@
 	/>
 	<br />
 	<br />
-  Button to run game sequence again
+  <Button filled small href="/daily">Daily</Button>
+  <Divider />
   <Button filled small on:click={async() => { await data.game.runGameSequence(); game=data.game; } }>New Game</Button>
-  Button to reset game
-	<Button outline small on:click={data.game.resetGame}>Reset</Button>
-  Button to console log game board
+	<Button outline small on:click={() => { data.game.resetGame(); game=data.game; }}>Reset</Button>
   <Button outline small on:click={() => { game=data.game; console.log(game.answer);}}>Console Log Board</Button>
 </Card>
+</div>
 
 <style>
 	:global.board {
@@ -92,6 +92,9 @@
 		padding: 10px;
 		width: 300px;
 	}
+  .gamePanel {
+    display: flex;
+  }
 	.answerrow {
 		display: flex;
 		align-items: baseline;

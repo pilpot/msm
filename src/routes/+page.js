@@ -5,7 +5,7 @@ import { MsmGame } from "../lib/msmGame";
 export const load = async () => {
   let game = new MsmGame();
   game.noConsoleOutput = true;
-  game.allowDuplicates = false;
+  game.allowDuplicates = true;
   await game.runGameSequence();
   // game.board.reverse();
   // game.resolution.reverse();

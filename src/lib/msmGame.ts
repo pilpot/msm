@@ -119,7 +119,7 @@ export class MsmGame implements IMsmGame {
       let blackCount = 0;
       let whiteCount = 0;
 
-      
+
       for (let k = 0; k < this.columns; k++) {
         // Check for colors in the same place
         if (answer[k] === this.board[boardRow][k]) {
@@ -139,6 +139,13 @@ export class MsmGame implements IMsmGame {
       // Answer doesn't match the criteria, remove it from the remaining answers
       this.allRemainingAnswers.splice(j, 1);
       j--; // Adjust the index after removing an element
+    }
+    this.remainingAnswersCount[boardRow] = this.allRemainingAnswers.length;
+  }
+
+  public async eliminateAnswersAll(): Promise<void> {
+    for (let i = 0; i < this.board.length; i++) {
+      await this.eliminateAnswers(i);
     }
   }
 
@@ -225,7 +232,10 @@ export class MsmGame implements IMsmGame {
   }
 
   // returns a new random row
-  public generateRandomRow(allowDuplicates: boolean): number[] {
+  public generateRandomRow(allowDuplicates?: boolean): number[] {
+    if(allowDuplicates === undefined) {
+      allowDuplicates = this.allowDuplicates;
+    }
     const colorsToPick = [...this.availableColors]; // copy of this.availableColors;
     const row = [];
     if (!allowDuplicates) {
@@ -311,7 +321,7 @@ export class MsmGame implements IMsmGame {
       this.addBoardRow();
       this.addResolutionRow();
     }
-    this.remainingAnswersCount[emptyRowIndex] = this.allRemainingAnswers.length;
+
     return false;
   }
 
@@ -335,7 +345,7 @@ export class MsmGame implements IMsmGame {
     }
   }
 
-  public resetGame(): void {
+  resetGame = () => {
     this.status = "idle";
     this.attempts = 0;
     this.board = Array(1).fill(null).map(() => Array(this.colors).fill(null));
@@ -372,31 +382,90 @@ export class MsmGame implements IMsmGame {
     //}
   }
 
-  public async setAllRemainingAnswers(allowDuplicates: boolean): Promise<void> {
+  public async setAllRemainingAnswers(allowDuplicates?: boolean): Promise<void> {
+    if (!allowDuplicates) {
+      allowDuplicates = this.allowDuplicates;
+    }
     this.allRemainingAnswers = await this.generateAllPossibleAnswers(allowDuplicates);
   }
 
   // set the answer with or without duplicates colors
   public async setAnswer(answerProvided?: number[]): Promise<void> {
-    // alert if answer provided contains duplicates and allowDuplicates is false
-    if (answerProvided && answerProvided.some((num, i) => answerProvided.indexOf(num) !== i) && !this.allowDuplicates) {
-      console.log("Answer provided contains duplicates and allowDuplicates is false, answer provided: ", answerProvided);
-    }
-
     if (answerProvided) {
+      await this.checkGuessIsValid(answerProvided);
       this.answer = answerProvided;
     } else {
       this.answer = this.generateRandomRow(this.allowDuplicates);
     }
   }
 
+  public async loadBoard(board: number[][]): Promise<void> {
+    // board must respect columns and max rows
+    board.forEach((row, i) => {
+      if (row.length !== this.columns) {
+        throw new Error("Board row " + i + " must have " + this.columns + " colors");
+      }
+    });
+    if (board.length > this.rows) {
+      throw new Error("Board must have " + this.rows + " rows");
+    }
+    this.board = board;
+  }
+
+  public async checkGuessIsValid(guess: number[]): Promise<void> {
+    // only contains numbers between 0 and colors
+    if (!guess.every(num => num >= 1 && num < this.colors + 1)) {
+      throw new Error("Guess contains invalid numbers");
+    }
+    // cannot contain duplicate colors
+    if (!this.allowDuplicates && guess.some((num, i) => guess.indexOf(num) !== i)) {
+      throw new Error("Guess contains duplicate colors and allowDuplicates is false");
+    }
+    // cannot be bigger or smaller than columns
+    if (guess.length !== this.columns) {
+      throw new Error("Guess length must be equal to the number of columns");
+    }
+    // cannot be one of the previous answers
+    if (this.board.some(row => JSON.stringify(row) === JSON.stringify(guess))) {
+      throw new Error("Guess cannot be one of the previous answers");
+    }
+  }
+
   public async setBoardRow(row: number, content: number[]): Promise<void> {
+    await this.checkGuessIsValid(content);
     // if the row doesn't exist, push an empty one at the end
     if (!this.board[row]) {
       this.board[row] = [];
     }
     this.board[row] = content;
   }
+
+  public async setBoardRowAvailable(content: number[]): Promise<void> {
+    await this.checkGuessIsValid(content);
+    // find an empty row and set the content, if the first one isn't an empty one and row count is less than rows, add a new row
+    let emptyRowIndex = -1;
+    for (let i = 0; i < this.board.length; i++) {
+      if (this.board[i].every(num => num === null)) {
+        emptyRowIndex = i;
+        break;
+      }
+    }
+
+    // If the first row isn't empty and row count is less than rows, add a new row
+    if (emptyRowIndex === -1 && this.board.length < this.rows) {
+      emptyRowIndex = this.board.length;
+      this.addBoardRow();
+    }
+
+    // Set the content in the empty row
+    if (emptyRowIndex !== -1) {
+      this.board[emptyRowIndex] = content;
+    } else {
+      throw new Error("No empty row available");
+    }
+  }
+
+
 
   public sortByLeastCommonColors(previousAnswer: number[], remainingAnswers: number[][]): number[][] {
     return remainingAnswers.sort((a, b) => {
