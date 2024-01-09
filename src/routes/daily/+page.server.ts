@@ -58,11 +58,24 @@ export const actions = {
       console.log('parsing formdata');
       data = parseFormData(formData);
     } catch (e) {
-      error(400, { message: 'Invalid form data' + e.message });
+      if (typeof e === "string") {
+        // handle string error
+        error(400, { message: 'Invalid form data' + e });
+      } else if (e instanceof Error) {
+        // handle Error object
+        error(400, { message: 'Invalid form data' + e.message });
+      } else {
+        // handle other types of errors
+        error(400, { message: 'Unknown error' });
+      }
+    }
+    // check if data is undefined
+    if(data === undefined) {
+      fail(400, { message: 'No data' });
     }
 
     if (!data.guess) {
-     fail(400, { message: 'No guess' });
+      fail(400, { message: 'No guess' });
     }
 
     try {

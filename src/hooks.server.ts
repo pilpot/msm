@@ -1,10 +1,15 @@
 import { connectToDB } from "$lib/db";
-import type { Handle, HandleServerError, error } from '@sveltejs/kit'
+import type { Handle } from '@sveltejs/kit'
 import { v4 as uuid } from 'uuid';
 
-export const handle: Handle = async ({ event, resolve }) => {
 
-  const dbconn = await connectToDB();
+
+export const handle: Handle = async ({ event, resolve }) => {
+  // Connect to database
+  const dbconn = await connectToDB().catch((error) => {
+    console.error(error);
+    throw Error('Could not connect to database');
+  });
   // Check if sessionId is stored in a cookie
   let sessionCookie = event.cookies.get('session');
 
@@ -22,10 +27,17 @@ export const handle: Handle = async ({ event, resolve }) => {
   return response
 }
 
-export const handleError: HandleServerError = ({ event, error }) => {
-  // send error to an error tracking service
-  console.log("error;", event.url, error);
-  return {
-    message: error.message
-  }
+/** @type {import('@sveltejs/kit').HandleServerError} */
+export async function handleError({ error, event, status, message }) {
+	const errorId = crypto.randomUUID();
+
+	// example integration with https://sentry.io/
+	console.log(error, {
+		extra: { event, errorId, status, message },
+	});
+
+	return {
+		message: 'Whoops!',
+
+	};
 }
