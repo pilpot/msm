@@ -1,6 +1,8 @@
 <script>
 	// @ts-ignore
 	import { Headline } from 'attractions';
+	// global scss 
+	import '../global.scss';
 </script>
 
 <svelte:head>
