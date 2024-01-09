@@ -16,25 +16,26 @@
 		'#8d6e63'
 	];
 </script>
+
 {#if form?.message}<p class="error">{form.message}</p>{/if}
 {#if form && form.body}
 	<GameBoard
 		boardGuesses={form.body.boardGuesses}
 		boardResolutions={form.body.boardResolutions}
 		remainingAnswersCount={form.body.remainingAnswersCount}
-    sessionId={data.sessionId}
-    colors={colors}
-    status={form.body.status}
-    answer={form.body.answer}
+		sessionId={data.sessionId}
+		{colors}
+		status={form.body.status}
+		answer={form.body.answer}
 	/>
 {:else if data.status}
 	<GameBoard
 		boardGuesses={data.boardGuesses}
 		boardResolutions={data.boardResolutions}
 		remainingAnswersCount={data.remainingAnswersCount}
-    sessionId={data.sessionId}
-    colors={colors}
-    status={data.status}
-    answer={data.answer}
+		sessionId={data.sessionId}
+		{colors}
+		status={data.status}
+		answer={data.answer}
 	/>
 {/if}
