@@ -16,8 +16,6 @@
 		'#8d6e63'
 	];
 </script>
-
-{#if form?.message}<p class="error">{form.message}</p>{/if}
 {#if form && form.body}
 	<GameBoard
 		boardGuesses={form.body.boardGuesses}
@@ -27,6 +25,8 @@
 		{colors}
 		status={form.body.status}
 		answer={form.body.answer}
+		error_message={form?.message || ''}
+		maxAnswers={form.body.maxAnswers}
 	/>
 {:else if data.status}
 	<GameBoard
@@ -37,5 +37,7 @@
 		{colors}
 		status={data.status}
 		answer={data.answer}
+		error_message={form?.message || ''}
+		maxAnswers={data.maxAnswers}
 	/>
 {/if}

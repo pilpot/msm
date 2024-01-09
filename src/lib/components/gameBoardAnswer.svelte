@@ -1,13 +1,16 @@
 <script lang="ts">
 	import GameBoardGuess from './gameBoardGuess.svelte';
+	// @ts-ignore
+	import { Dot } from 'attractions';
 	export let answer: number[] = [];
+	export let columns: number = 5;
 </script>
 
 <div class="answerRow">
 	{#if answer.length > 0}
 		<GameBoardGuess guesses={answer} />
 	{:else}
-		Answer unknown
+		<GameBoardGuess guesses={Array(columns).fill(0)} />
 	{/if}
 </div>
 
@@ -16,6 +19,7 @@
 		display: flex;
 		align-items: baseline;
 		justify-content: space-around;
-		width: 150px;
+		width: 189px;
+		opacity: 0.7;
 	}
 </style>

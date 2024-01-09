@@ -5,12 +5,13 @@
 	export let guesses: number[] = [];
 	export let resolution: number[] = [0, 0];
 	export let remainingAnswersCount: number = 0;
+	export let maxAnswers: number = 0;
 </script>
 
 <div class="gameBoardRow">
 	{#if guesses[0] > 0}
 		<GameBoardGuess {guesses} />
-		<GameBoardResolution {resolution} {remainingAnswersCount} />
+		<GameBoardResolution {resolution} {remainingAnswersCount} {maxAnswers} />
 	{/if}
 </div>
 

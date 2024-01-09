@@ -5,7 +5,7 @@
 	export let guesses: number[] = [];
 
 	const colors = [
-		'#CCC',
+		'conic-gradient(from 180deg,violet,blue,green,yellow,orange,red,violet)',
 		'#FFF',
 		'#000',
 		'#a93226',
@@ -19,7 +19,7 @@
 
 <div class="guessRow" {...$$restProps}>
 	{#each guesses as guess}
-		<Dot style="background-color:{colors[guess]};display:inline-block;height:25px;width:25px;" />
+		<Dot style="background:{colors[guess]};display:inline-block;height:25px;width:25px;filter: drop-shadow(0px 0px 2px #804000);" />
 	{/each}
 	<slot />
 </div>

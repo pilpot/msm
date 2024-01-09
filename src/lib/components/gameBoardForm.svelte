@@ -7,6 +7,7 @@
 
 	export let sessionId: string;
 	export let colors: string[];
+
 	let guesspos0 = browser ? window.sessionStorage.getItem('guess[0]') ?? '1' : '';
 	let guesspos1 = browser ? window.sessionStorage.getItem('guess[1]') ?? '2' : '';
 	let guesspos2 = browser ? window.sessionStorage.getItem('guess[2]') ?? '3' : '';
@@ -23,6 +24,7 @@
 	use:enhance
 	style="display:flex;"
 >
+
 	<div style="display: flex;justify-content: flex-space-around; max-width: 189px;">
 		<GameBoardPicker {colors} id="guess[0]" value={parseInt(guesspos0)}></GameBoardPicker>
 		<GameBoardPicker {colors} id="guess[1]" value={parseInt(guesspos1)}></GameBoardPicker>
@@ -30,7 +32,9 @@
 		<GameBoardPicker {colors} id="guess[3]" value={parseInt(guesspos3)}></GameBoardPicker>
 		<GameBoardPicker {colors} id="guess[4]" value={parseInt(guesspos4)}></GameBoardPicker>
 	</div>
-	<Button small filled type="submit" style="margin-right:5px;">Guess</Button>
+	<div style="display: flex;margin-left:15px;">
+	<Button small filled type="submit">Make a guess</Button>
+	</div>
 	<!--<input bind:value={guesspos4} on:change={() => sessionStore('guesspos4', guesspos4)} type="number" name="guess[4]"/>-->
 	<input type="hidden" name="sessionId" value={sessionId} />
 </form>

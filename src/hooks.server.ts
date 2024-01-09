@@ -9,11 +9,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 		throw Error('Could not connect to database');
 	});
 	// Check if sessionId is stored in a cookie
-	let sessionCookie = event.cookies.get('session');
+	let sessionCookie: string = event.cookies.get('session') || '';
 
 	// If sessionId doesn't exist or doesn't match uuid format, generate a new one
 	if (
 		!sessionCookie ||
+    sessionCookie == '' ||
 		!sessionCookie.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
 	) {
 		sessionCookie = uuid();
@@ -37,10 +38,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 export async function handleError({ error, event, status, message }) {
 	const errorId = crypto.randomUUID();
 
-	// example integration with https://sentry.io/
-	console.log(error, {
-		extra: { event, errorId, status, message }
-	});
+	// big output
+	// console.log(error, {
+	// 	extra: { event, errorId, status, message }
+	// });
+
+  // small output
+  console.error(error);
 
 	return {
 		message: 'Whoops!'

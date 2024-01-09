@@ -28,6 +28,7 @@ export class MsmGame implements IMsmGame {
 	public guessAlgorithm: 'random' | 'optimal' | 'first' | 'moreBlacks' | 'lessWhites';
 	public noConsoleOutput: boolean;
 	public remainingAnswersCount: number[];
+	public maxAnswers: number;
 	public resolution: number[][];
 	public rows: number;
 	public status: 'idle' | 'playing' | 'won' | 'lost';
@@ -56,6 +57,7 @@ export class MsmGame implements IMsmGame {
 		this.allowDuplicates = allowDuplicates ?? true;
 		this.guessAlgorithm = guessAlgorithm ?? 'random';
 		this.allRemainingAnswers = [];
+		this.maxAnswers = 0;
 		this.noConsoleOutput = false;
 		this.attempts = 0;
 	}
@@ -422,6 +424,7 @@ export class MsmGame implements IMsmGame {
 			allowDuplicates = this.allowDuplicates;
 		}
 		this.allRemainingAnswers = await this.generateAllPossibleAnswers(allowDuplicates);
+		this.maxAnswers = this.allRemainingAnswers.length;
 	}
 
 	// set the answer with or without duplicates colors
@@ -450,19 +453,19 @@ export class MsmGame implements IMsmGame {
 	public async checkGuessIsValid(guess: number[]): Promise<void> {
 		// only contains numbers between 0 and colors
 		if (!guess.every((num) => num >= 1 && num < this.colors + 1)) {
-			throw new Error('Guess contains invalid numbers');
+			throw new Error('Nice try, but one of the colors isn\'t in the base colors set 🫠');
 		}
 		// cannot contain duplicate colors
 		if (!this.allowDuplicates && guess.some((num, i) => guess.indexOf(num) !== i)) {
-			throw new Error('Guess contains duplicate colors and allowDuplicates is false');
+			throw new Error('Watch out, duplicate colors are not allowed in this game 🥸');
 		}
 		// cannot be bigger or smaller than columns
 		if (guess.length !== this.columns) {
-			throw new Error('Guess length must be equal to the number of columns');
+			throw new Error('Mmmh... guess must have ' + this.columns + ' pins in it 🤔');
 		}
 		// cannot be one of the previous answers
 		if (this.board.some((row) => JSON.stringify(row) === JSON.stringify(guess))) {
-			throw new Error('Guess cannot be one of the previous answers');
+			throw new Error('Sure ? You already tried this one 🤨');
 		}
 	}
 

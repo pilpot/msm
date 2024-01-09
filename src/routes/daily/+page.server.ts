@@ -1,6 +1,7 @@
 import { MsmGame } from '$lib/msmGame';
 import { fail, error } from '@sveltejs/kit';
-import { parseFormData } from 'parse-nested-form-data';
+import { Bodyguard } from '@auth70/bodyguard';
+import { z } from 'zod';
 
 // Store and keep for session the user answers in an array
 
@@ -8,6 +9,7 @@ const game = new MsmGame();
 game.allowDuplicates = false;
 const dailySecretAnswer: number[] = game.generateRandomRow();
 game.setAnswer(dailySecretAnswer);
+console.log('dailySecretAnswer:', dailySecretAnswer);
 
 export const load = async ({ locals }) => {
 	try {
@@ -35,42 +37,38 @@ export const load = async ({ locals }) => {
 		remainingAnswersCount: game.remainingAnswersCount,
 		status: game.status,
 		sessionId: locals.sessionId,
-		answer: game.status == 'won' ? game.answer : []
+		answer: game.status == 'won' ? game.answer : [],
+		maxAnswers: game.maxAnswers
 	};
 };
+
+const RouteSchema = z.object({ sessionId: z.string(), guess: z.array(z.string()) });
+const bodyguard = new Bodyguard();
 
 export const actions = {
 	submitGuess: async ({ request, locals }) => {
 		console.log('handling guess');
 		const db = locals.db;
-		// handle errors for formdata and parseformdata
-		let formData: FormData;
-		let data;
 
-		try {
-			console.log('wait for formdata');
-			console.log(request);
-			formData = await request.formData();
-			console.log('parsing formdata');
-			data = parseFormData(formData);
-		} catch (e) {
-			if (typeof e === 'string') {
-				// handle string error
-				error(400, { message: 'Invalid form data' + e });
-			} else if (e instanceof Error) {
-				// handle Error object
-				error(400, { message: 'Invalid form data' + e.message });
-			} else {
-				// handle other types of errors
-				error(400, { message: 'Unknown error' });
-			}
+		console.log('wait for formdata');
+		//console.log(request);
+		const { success, value } = await bodyguard.softForm(
+			request, // Pass in the request
+			RouteSchema.parse // Pass in the validator
+		);
+
+		if (!success) {
+			return fail(400, { message: 'Invalid form data ' + value });
 		}
+
+		console.log('formdata:', value);
+
 		// check if data is undefined
-		if (data === undefined) {
+		if (value === undefined) {
 			fail(400, { message: 'No data' });
 		}
 
-		if (!data.guess) {
+		if (!value.guess) {
 			fail(400, { message: 'No guess' });
 		}
 
@@ -83,17 +81,17 @@ export const actions = {
 			if (queryBoard.rowCount && queryBoard.rowCount > 0) {
 				previousBoard = queryBoard.rows[0].board;
 			}
-			console.log('sessionId:', data.sessionId);
+			console.log('sessionId:', value.sessionId);
 			console.log('previousBoard:', previousBoard);
 			let guess: number[];
-			console.log('type:', typeof data.guess);
-			console.log('guess: ', data.guess);
+			console.log('type:', typeof value.guess);
+			console.log('guess: ', value.guess);
 			// if is an object
-			if (typeof data.guess == 'object') {
+			if (typeof value.guess == 'object') {
 				// if the guess is an array
-				if (Array.isArray(data.guess)) {
+				if (Array.isArray(value.guess)) {
 					// change content of array from string to number
-					guess = data.guess.map(Number);
+					guess = value.guess.map(Number);
 				} else {
 					return fail(400, { message: 'Invalid guess' });
 				}
@@ -125,7 +123,8 @@ export const actions = {
 					remainingAnswersCount: game.remainingAnswersCount,
 					status: game.status,
 					success: true,
-					answer: game.status === 'won' ? game.answer : []
+					answer: game.status === 'won' ? game.answer : [],
+					maxAnswers: game.maxAnswers
 				}
 			};
 		} catch (e) {

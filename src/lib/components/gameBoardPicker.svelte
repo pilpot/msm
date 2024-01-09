@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { clickoutside } from '@svelte-put/clickoutside';
 
 	function sessionStore(field: string, value: string) {
 		if (browser) window.sessionStorage.setItem(field, value);
@@ -46,6 +47,16 @@
 	let inputHeight: number;
 
 	async function toggleDropdown(e: MouseEvent) {
+		// hide all other dropdowns
+		document.querySelectorAll('.values-dropdown').forEach((dd) => {
+			// set to display none
+			dd.setAttribute('style', 'display:none;');
+		});
+		document.querySelectorAll('.select-color').forEach((dd) => {
+			// remove class fake-focus
+			dd.classList.remove('fake-focus');
+		});
+
 		if (
 			e.clientY + inputHeight < ddHeight ||
 			windowHeight - ddHeight - inputHeight - e.clientY > 0
@@ -65,6 +76,7 @@
 
 	function clickOutsideDropdown() {
 		ddActive = false;
+		console.log('clicked outside', ddActive);
 	}
 
 	function changeValue(innerValue: string) {
@@ -121,10 +133,12 @@
 <div class="color-picker-holder">
 	<div class="color-picker-inner">
 		<button
+			id={id + '-button'}
 			bind:clientHeight={inputHeight}
 			class="select-color"
 			on:click|preventDefault={(e) => toggleDropdown(e)}
 			class:fake-focus={ddActive}
+			use:clickoutside on:clickoutside={clickOutsideDropdown}
 		>
 			<div style="display: flex;">
 				<div style="background: {colors[value]};" class="color-block"></div>
@@ -135,7 +149,7 @@
 	</div>
 
 	{#if ddActive}
-		<div class:top bind:clientHeight={ddHeight} class="values-dropdown" use:clickOutside>
+		<div class:top bind:clientHeight={ddHeight} class="values-dropdown" use:clickoutside on:clickoutside={clickOutsideDropdown}>
 			<div class="values-dropdown-grid">
 				{#each colors as val, index}
 					{#if index !== 0}
@@ -168,12 +182,13 @@
 
 	.select-color {
 		border: 1px solid #545454c7;
-		padding: 5px;
-		border-radius: 0.2rem;
+		padding: 4px;
+		border-radius: 50%;
 		margin-right: 3px;
 		background: #ccc;
 		height: 35px;
 		width: 35px;
+		filter: drop-shadow(0px 0px 2px #804000);
 	}
 
 	.caret {
