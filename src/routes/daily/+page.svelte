@@ -16,6 +16,7 @@
 		'#8d6e63'
 	];
 </script>
+
 {#if form && form.body}
 	<GameBoard
 		boardGuesses={form.body.boardGuesses}

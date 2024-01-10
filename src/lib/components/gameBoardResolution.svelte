@@ -31,8 +31,8 @@
 		<meter
 			min={-maxAnswers}
 			max="-1"
-			high={Math.round(-maxAnswers / 3)}
-			low={-Math.round((maxAnswers * 2) / 3)}
+			high={-Math.round(maxAnswers / 3)}
+			low={-Math.round(maxAnswers / 2)}
 			optimum="-1"
 			value={-remainingAnswersCount}
 		/>

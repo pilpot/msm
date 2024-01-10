@@ -22,7 +22,7 @@
 	method="post"
 	enctype="multipart/form-data"
 	use:enhance
-	style="display:flex;align-items: center;"
+	style="display:flex;align-items: center;justify-content: space-between;"
 >
 
 	<div style="display: flex;justify-content: flex-space-around; max-width: 189px;">

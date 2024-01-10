@@ -18,8 +18,7 @@
 	.answerRow {
 		display: flex;
 		align-items: baseline;
-		justify-content: space-around;
-		width: 189px;
+		justify-content: flex-start;
 		opacity: 0.7;
 	}
 </style>

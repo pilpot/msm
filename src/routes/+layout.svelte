@@ -14,11 +14,5 @@
 	/>
 	<title>MasterSuperMind</title>
 </svelte:head>
-<Headline>MasterSuperMind</Headline>
-<slot />
 
-<style>
-	:global(body) {
-		font-family: 'Noto Sans', sans-serif;
-	}
-</style>
+<slot />
