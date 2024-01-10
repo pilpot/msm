@@ -42,6 +42,9 @@
 <style>
 	.resolution {
 		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
 	}
 	.resolutionRow {
 		display: flex;
@@ -51,8 +54,12 @@
 		width: 100px;
 	}
 	.remainingAnswers {
+		display: flex;
 		width: 70px;
 		text-align: center;
 		color: #f7f7f7;
+	}
+	.judge {
+		display: flex;
 	}
 </style>

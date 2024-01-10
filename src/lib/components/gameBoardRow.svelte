@@ -19,6 +19,10 @@
 	.gameBoardRow {
 		display: flex;
 		align-items: baseline;
+		justify-content: center;
 		margin-top: 5px;
+		margin-bottom: 5px;
+		flex-wrap: wrap;
+		gap: 0.5em;
 	}
 </style>
