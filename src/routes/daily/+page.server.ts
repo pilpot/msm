@@ -1,34 +1,64 @@
 import { MsmGame } from '$lib/msmGame';
-import { fail, error } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
+// cookies type
+import type { Cookies } from '@sveltejs/kit';
 import { Bodyguard } from '@auth70/bodyguard';
 import { z } from 'zod';
+import type { PoolClient } from 'pg';
 
 // Store and keep for session the user answers in an array
 
-const game = new MsmGame();
-game.allowDuplicates = false;
-const dailySecretAnswer: number[] = game.generateRandomRow();
-game.setAnswer(dailySecretAnswer);
-console.log('dailySecretAnswer:', dailySecretAnswer);
+// const game = new MsmGame();
+// game.allowDuplicates = false;
+// const dailySecretAnswer: number[] = game.generateRandomRow();
+// game.setAnswer(dailySecretAnswer);
+// console.log('dailySecretAnswer:', dailySecretAnswer);
 
-export const load = async ({ locals }) => {
-	try {
-		const db = locals.db;
-		const queryBoard = await db.query(`SELECT * FROM game_data WHERE session_id = $1 LIMIT 1`, [
-			locals.sessionId
-		]);
-		let previousBoard: number[][];
-		if (queryBoard.rowCount && queryBoard.rowCount > 0) {
-			previousBoard = queryBoard.rows[0].board;
-			await game.loadBoard(previousBoard);
-			console.log('Loading previous board:', previousBoard);
+async function setDailyGameSettings(db: PoolClient, game: MsmGame) {
+	const querySettings = await db.query('SELECT * FROM daily_settings WHERE day = $1 LIMIT 1', [
+		new Date()
+	]);
+	if (querySettings.rowCount && querySettings.rowCount == 1) {
+		game.rows = querySettings.rows[0].rows;
+		game.columns = querySettings.rows[0].columns;
+		game.colors = querySettings.rows[0].colors;
+		game.allowDuplicates = querySettings.rows[0].allow_duplicates;
+		game.setAnswer(querySettings.rows[0].answer);
+	}
+}
+
+async function loadPreviousBoard(db: PoolClient, game: MsmGame, sessionId: string): Promise<void> {
+	let previousBoard: number[][] = [];
+
+	const queryBoard = await db.query(`SELECT * FROM game_data WHERE session_id = $1 LIMIT 1`, [
+		sessionId
+	]);
+
+	if (queryBoard.rowCount && queryBoard.rowCount > 0) {
+		previousBoard = queryBoard.rows[0].board;
+		await game.loadBoard(previousBoard);
+		console.log('Loaded previous board:', previousBoard);
+	}
+}
+
+export const load = async ({ locals, cookies }) => {
+	const db = locals.db;
+	const game = new MsmGame();
+	// load game settings of the day from the database
+	await setDailyGameSettings(db, game);
+
+	// if cookies session is set and a uuid format, use it to load previous board
+	if (cookies.get('session') != undefined) {
+		if (
+			cookies
+				.get('session')!
+				.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+		) {
+			await loadPreviousBoard(db, game, cookies.get('session') as string);
 			await game.setAllRemainingAnswers();
 			await game.answerResolutionBoardAll();
 			await game.eliminateAnswersAll();
-			console.log('resolutions:', game.resolution);
 		}
-	} catch (error) {
-		console.log(error);
 	}
 
 	return {
@@ -46,11 +76,49 @@ const RouteSchema = z.object({ sessionId: z.string(), guess: z.array(z.string())
 const bodyguard = new Bodyguard();
 
 export const actions = {
-	submitGuess: async ({ request, locals }) => {
-		console.log('handling guess');
+	helpMe: async ({ request, locals }) => {
 		const db = locals.db;
+		const game = new MsmGame();
 
-		console.log('wait for formdata');
+		// load game settings of the day from the database
+		await setDailyGameSettings(db, game);
+		if (locals.sessionId) {
+			await loadPreviousBoard(db, game, locals.sessionId);
+		}
+
+		await game.setAllRemainingAnswers();
+		await game.answerResolutionBoardAll();
+		await game.eliminateAnswersAll();
+
+		const firstAnswer = game.allRemainingAnswers[0];
+		await game.setBoardRowAvailable(firstAnswer);
+		await game.removeAnswer(firstAnswer);
+		db.query(
+			'INSERT INTO game_data(session_id, board) VALUES($1, $2) ON CONFLICT (session_id) DO UPDATE SET board = $2',
+			[locals.sessionId, game.board]
+		);
+		await game.answerResolutionBoardRow(game.board.length-1);
+		await game.eliminateAnswers(game.board.length-1);
+
+		return {
+			status: 200,
+			body: {
+				boardGuesses: game.board,
+				boardResolutions: game.resolution,
+				remainingAnswersCount: game.remainingAnswersCount,
+				status: game.status,
+				success: true,
+				answer: game.status === 'won' ? game.answer : [],
+				maxAnswers: game.maxAnswers
+			}
+		};
+	},
+	submitGuess: async ({ request, locals }) => {
+		const db = locals.db;
+		const game = new MsmGame();
+		// load game settings of the day from the database
+		await setDailyGameSettings(db, game);
+
 		//console.log(request);
 		const { success, value } = await bodyguard.softForm(
 			request, // Pass in the request
@@ -60,20 +128,14 @@ export const actions = {
 		if (!success) {
 			return fail(400, { message: 'Invalid form data ' + value });
 		}
-
-		console.log('formdata:', value);
-
-		// check if data is undefined
 		if (value === undefined) {
-			fail(400, { message: 'No data' });
+			return fail(400, { message: 'No data' });
 		}
-
 		if (!value.guess) {
-			fail(400, { message: 'No guess' });
+			return fail(400, { message: 'No guess' });
 		}
 
 		try {
-			console.log('loading previous board');
 			const queryBoard = await db.query(`SELECT * FROM game_data WHERE session_id = $1 LIMIT 1`, [
 				locals.sessionId
 			]);
@@ -81,11 +143,7 @@ export const actions = {
 			if (queryBoard.rowCount && queryBoard.rowCount > 0) {
 				previousBoard = queryBoard.rows[0].board;
 			}
-			console.log('sessionId:', value.sessionId);
-			console.log('previousBoard:', previousBoard);
 			let guess: number[];
-			console.log('type:', typeof value.guess);
-			console.log('guess: ', value.guess);
 			// if is an object
 			if (typeof value.guess == 'object') {
 				// if the guess is an array
@@ -98,9 +156,8 @@ export const actions = {
 			} else {
 				return fail(400, { message: 'Invalid guess type' });
 			}
-			console.log('guess typed: ', guess);
-			await game.checkGuessIsValid(guess);
 
+			await game.checkGuessIsValid(guess);
 			await game.setAllRemainingAnswers();
 
 			if (previousBoard) {
@@ -108,10 +165,12 @@ export const actions = {
 			}
 
 			await game.setBoardRowAvailable(guess);
+
 			db.query(
 				'INSERT INTO game_data(session_id, board) VALUES($1, $2) ON CONFLICT (session_id) DO UPDATE SET board = $2',
 				[locals.sessionId, game.board]
 			);
+
 			await game.answerResolutionBoardAll();
 			await game.eliminateAnswersAll();
 

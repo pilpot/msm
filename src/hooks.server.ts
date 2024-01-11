@@ -35,7 +35,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 };
 
 /** @type {import('@sveltejs/kit').HandleServerError} */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function handleError({ error, event, status, message }) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const errorId = crypto.randomUUID();
 
 	// big output
@@ -44,7 +46,11 @@ export async function handleError({ error, event, status, message }) {
 	// });
 
   // small output
-  console.error(error);
+	if(status != 404) {
+		console.error(error);
+	}
+	//console.log(status);
+  //console.error(error);
 
 	return {
 		message: 'Whoops!'
