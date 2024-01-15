@@ -1,7 +1,5 @@
 import { MsmGame } from '$lib/msmGame';
 import { fail } from '@sveltejs/kit';
-// cookies type
-import type { Cookies } from '@sveltejs/kit';
 import { Bodyguard } from '@auth70/bodyguard';
 import { z } from 'zod';
 import type { PoolClient } from 'pg';
@@ -14,17 +12,40 @@ import type { PoolClient } from 'pg';
 // game.setAnswer(dailySecretAnswer);
 // console.log('dailySecretAnswer:', dailySecretAnswer);
 
+async function createDailyGameSettings(db: PoolClient, game: MsmGame) {
+	game.rows = 10;
+	//randow number of columns between 4 and 6
+	game.columns = Math.floor(Math.random() * 3) + 4;
+	// random number of colors between columns +1 and 10
+	game.setColors(Math.floor(Math.random() * (game.columns + 1)) + game.columns);
+	// allow duplicates is random true or false
+	game.allowDuplicates = Math.floor(Math.random() * 2) == 1;
+	// generate random answer
+	game.setAnswer();
+	await db.query(
+		'INSERT INTO daily_settings (day, rows, columns, colors, allow_duplicates, answer) VALUES ($1, $2, $3, $4, $5, $6)',
+		[new Date(), game.rows, game.columns, game.colors, game.allowDuplicates, game.answer]
+	);
+	console.log('Created new daily settings');
+}
+
 async function setDailyGameSettings(db: PoolClient, game: MsmGame) {
 	const querySettings = await db.query('SELECT * FROM daily_settings WHERE day = $1 LIMIT 1', [
 		new Date()
 	]);
-	if (querySettings.rowCount && querySettings.rowCount == 1) {
+	if (querySettings.rowCount && querySettings.rowCount >= 1) {
 		game.rows = querySettings.rows[0].rows;
 		game.columns = querySettings.rows[0].columns;
-		game.colors = querySettings.rows[0].colors;
+		await game.setColors(querySettings.rows[0].colors);
 		game.allowDuplicates = querySettings.rows[0].allow_duplicates;
-		game.setAnswer(querySettings.rows[0].answer);
+		await game.setAnswer(querySettings.rows[0].answer);
+		console.log('Loaded daily settings:', querySettings.rows[0]);
+	} else {
+		// create new game settings for the day
+		await createDailyGameSettings(db, game);
 	}
+	console.log('rows:', game.rows, 'columns:', game.columns, 'colors:', game.colors);
+	console.log('answer:', game.answer);
 }
 
 async function loadPreviousBoard(db: PoolClient, game: MsmGame, sessionId: string): Promise<void> {
@@ -37,7 +58,7 @@ async function loadPreviousBoard(db: PoolClient, game: MsmGame, sessionId: strin
 	if (queryBoard.rowCount && queryBoard.rowCount > 0) {
 		previousBoard = queryBoard.rows[0].board;
 		await game.loadBoard(previousBoard);
-		console.log('Loaded previous board:', previousBoard);
+		//console.log('Loaded previous board:', previousBoard);
 	}
 }
 
@@ -68,7 +89,10 @@ export const load = async ({ locals, cookies }) => {
 		status: game.status,
 		sessionId: locals.sessionId,
 		answer: game.status == 'won' ? game.answer : [],
-		maxAnswers: game.maxAnswers
+		columns: game.columns,
+		maxAnswers: game.maxAnswers,
+		colors: game.colors,
+		allowDuplicates: game.allowDuplicates
 	};
 };
 
@@ -76,12 +100,13 @@ const RouteSchema = z.object({ sessionId: z.string(), guess: z.array(z.string())
 const bodyguard = new Bodyguard();
 
 export const actions = {
-	helpMe: async ({ request, locals }) => {
+	helpMe: async ({ locals }) => {
 		const db = locals.db;
 		const game = new MsmGame();
 
 		// load game settings of the day from the database
 		await setDailyGameSettings(db, game);
+
 		if (locals.sessionId) {
 			await loadPreviousBoard(db, game, locals.sessionId);
 		}
@@ -90,15 +115,16 @@ export const actions = {
 		await game.answerResolutionBoardAll();
 		await game.eliminateAnswersAll();
 
-		const firstAnswer = game.allRemainingAnswers[0];
-		await game.setBoardRowAvailable(firstAnswer);
-		await game.removeAnswer(firstAnswer);
+		const randomIndex = Math.floor(Math.random() * game.allRemainingAnswers.length);
+		const choosenAnswer = game.allRemainingAnswers[randomIndex];
+		await game.setBoardRowAvailable(choosenAnswer);
+		await game.removeAnswer(choosenAnswer);
 		db.query(
 			'INSERT INTO game_data(session_id, board) VALUES($1, $2) ON CONFLICT (session_id) DO UPDATE SET board = $2',
 			[locals.sessionId, game.board]
 		);
-		await game.answerResolutionBoardRow(game.board.length-1);
-		await game.eliminateAnswers(game.board.length-1);
+		await game.answerResolutionBoardRow(game.board.length - 1);
+		await game.eliminateAnswers(game.board.length - 1);
 
 		return {
 			status: 200,
@@ -109,7 +135,10 @@ export const actions = {
 				status: game.status,
 				success: true,
 				answer: game.status === 'won' ? game.answer : [],
-				maxAnswers: game.maxAnswers
+				columns: game.columns,
+				maxAnswers: game.maxAnswers,
+				colors: game.colors,
+				allowDuplicates: game.allowDuplicates
 			}
 		};
 	},
@@ -123,7 +152,9 @@ export const actions = {
 		const { success, value } = await bodyguard.softForm(
 			request, // Pass in the request
 			RouteSchema.parse // Pass in the validator
-		);
+		).catch((e) => {
+			console.log(e);
+		});
 
 		if (!success) {
 			return fail(400, { message: 'Invalid form data ' + value });
@@ -183,7 +214,10 @@ export const actions = {
 					status: game.status,
 					success: true,
 					answer: game.status === 'won' ? game.answer : [],
-					maxAnswers: game.maxAnswers
+					columns: game.columns,
+					maxAnswers: game.maxAnswers,
+					colors: game.colors,
+					allowDuplicates: game.allowDuplicates
 				}
 			};
 		} catch (e) {

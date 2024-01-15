@@ -1,6 +1,7 @@
 <script>
 	// @ts-ignore
-	import { Headline } from 'attractions';
+	import { Card, Button, H2 } from 'attractions';
+	import { page } from '$app/stores';   
 	// global scss 
 	import '../global.scss';
 </script>
@@ -14,5 +15,14 @@
 	/>
 	<title>MasterSuperMind</title>
 </svelte:head>
+
+<Card tight style="display:flex;flex-direction:row;flex-wrap: wrap;align-content: center;justify-content: center;align-items: center;margin-bottom: 1em;gap: 1em;padding:0.5em;">
+	<H2 style="margin:0;">MasterSuperMind</H2>
+	<Button filled={$page.url.pathname === '/'} href="/">Home</Button>
+	<Button filled={$page.url.pathname === '/daily'} href="/daily">Daily</Button>
+	<Button filled={$page.url.pathname === '/custom'} href="/custom">Custom</Button>
+	<Button filled={$page.url.pathname === '/multiplayer'} href="/multiplayer">Multiplayer</Button>
+	<Button filled={$page.url.pathname === '/settings'} href="/settings">Settings</Button>
+</Card>
 
 <slot />

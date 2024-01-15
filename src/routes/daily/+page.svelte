@@ -13,32 +13,22 @@
 		'#28b463',
 		'#f4d03f',
 		'#a569bd',
-		'#8d6e63'
+		'#7a5142',
+		'#ff4600',
+		'#9d9d9d'
 	];
 </script>
-
-{#if form && form.body}
-	<GameBoard
-		boardGuesses={form.body.boardGuesses}
-		boardResolutions={form.body.boardResolutions}
-		remainingAnswersCount={form.body.remainingAnswersCount}
-		sessionId={data.sessionId}
+<GameBoard
+		boardGuesses={form?.body?.boardGuesses || data.boardGuesses}
+		boardResolutions={form?.body?.boardResolutions || data.boardResolutions}
+		remainingAnswersCount={form?.body?.remainingAnswersCount || data.remainingAnswersCount}
+		sessionId={data.sessionId || ''}
 		{colors}
-		status={form.body.status}
-		answer={form.body.answer}
+		colorsCount={form?.body?.colors || data.colors}
+		allowDuplicates={form?.body?.allowDuplicates || data.allowDuplicates}
+		columns={form?.body?.columns || data.columns}
+		status={form?.body?.status || data.status}
+		answer={form?.body?.answer || data.answer}
 		error_message={form?.message || ''}
-		maxAnswers={form.body.maxAnswers}
+		maxAnswers={form?.body?.maxAnswers || data.maxAnswers}
 	/>
-{:else if data.status}
-	<GameBoard
-		boardGuesses={data.boardGuesses}
-		boardResolutions={data.boardResolutions}
-		remainingAnswersCount={data.remainingAnswersCount}
-		sessionId={data.sessionId}
-		{colors}
-		status={data.status}
-		answer={data.answer}
-		error_message={form?.message || ''}
-		maxAnswers={data.maxAnswers}
-	/>
-{/if}

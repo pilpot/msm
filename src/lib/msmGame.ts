@@ -72,6 +72,11 @@ export class MsmGame implements IMsmGame {
 		this.resolution.push([0, 0]);
 	}
 
+	public setColors(colors: number): void {
+		this.colors = colors;
+		this.availableColors = Array.from({ length: this.colors }, (_, i) => i + 1);
+	}
+
 	// resolution board for all board rows
 	public async answerResolutionBoardAll(): Promise<void> {
 		for (let i = 0; i < this.board.length; i++) {

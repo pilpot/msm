@@ -13,13 +13,15 @@
 		'#28b463',
 		'#f4d03f',
 		'#a569bd',
-		'#8d6e63'
+		'#7a5142',
+		'#ff4600',
+		'#9d9d9d'
 	];
 </script>
 
 <div class="guessRow" {...$$restProps}>
 	{#each guesses as guess}
-		<Dot style="background:{colors[guess]};display:inline-block;height:25px;width:25px;filter: drop-shadow(0px 0px 2px #804000);" />
+		<Dot style="background:{colors[guess]};display:inline-block;height:25px;width:25px;filter: drop-shadow(0px 0px 2px #804000);margin:5px;" />
 	{/each}
 	<slot />
 </div>
@@ -29,6 +31,6 @@
 		display: flex;
 		align-items: baseline;
 		justify-content: space-around;
-		width: 189px;
+		gap: 0.5em;
 	}
 </style>

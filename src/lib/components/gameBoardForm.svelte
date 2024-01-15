@@ -7,27 +7,48 @@
 
 	export let sessionId: string;
 	export let colors: string[];
+	export let colorsCount: number;
+	export let columns: number;
 
-	let guesspos0 = browser ? window.sessionStorage.getItem('guess[0]') ?? '1' : '';
-	let guesspos1 = browser ? window.sessionStorage.getItem('guess[1]') ?? '2' : '';
-	let guesspos2 = browser ? window.sessionStorage.getItem('guess[2]') ?? '3' : '';
-	let guesspos3 = browser ? window.sessionStorage.getItem('guess[3]') ?? '4' : '';
-	let guesspos4 = browser ? window.sessionStorage.getItem('guess[4]') ?? '5' : '';
+	let guesspos: string[] = new Array(columns);
+	// for each columns create a guesspos
+	for (let i = 0; i < columns; i++) {
+		guesspos[i] = browser ? window.sessionStorage.getItem(`guess[${i}]`) ?? (i + 1).toString() : '';
+	}
+	// let guesspos0 = browser ? window.sessionStorage.getItem('guess[0]') ?? '1' : '';
+	// let guesspos1 = browser ? window.sessionStorage.getItem('guess[1]') ?? '2' : '';
+	// let guesspos2 = browser ? window.sessionStorage.getItem('guess[2]') ?? '3' : '';
+	// let guesspos3 = browser ? window.sessionStorage.getItem('guess[3]') ?? '4' : '';
+	// let guesspos4 = browser ? window.sessionStorage.getItem('guess[4]') ?? '5' : '';
+
 	// The same but directly in an array
 	//let guess: number[] = browser ? window.sessionStorage.getItem('guess')?.split(',').map((x) => parseInt(x)) ?? [1, 2, 3, 4, 5] : [];
+	function setLoading(loading: boolean) {
+		document.getElementById('loadingRow')!.style.display = loading ? 'block' : 'none';
+	}
 </script>
 
-<form action="?/submitGuess" method="post" enctype="multipart/form-data" use:enhance>
+<form
+	action="?/submitGuess"
+	method="post"
+	enctype="multipart/form-data"
+	use:enhance={({}) => {
+		setLoading(true);
+		return async ({ update }) => {
+			await update();
+			setLoading(false);
+		};
+	}}
+>
 	<div
 		class="formBoard"
 		style="display:flex;align-items: center;justify-content: space-between;flex-wrap:wrap;gap: 0.5em;"
 	>
-		<div style="display: flex;justify-content: flex-space-around; max-width: 189px;">
-			<GameBoardPicker {colors} id="guess[0]" value={parseInt(guesspos0)}></GameBoardPicker>
-			<GameBoardPicker {colors} id="guess[1]" value={parseInt(guesspos1)}></GameBoardPicker>
-			<GameBoardPicker {colors} id="guess[2]" value={parseInt(guesspos2)}></GameBoardPicker>
-			<GameBoardPicker {colors} id="guess[3]" value={parseInt(guesspos3)}></GameBoardPicker>
-			<GameBoardPicker {colors} id="guess[4]" value={parseInt(guesspos4)}></GameBoardPicker>
+		<div style="display: flex;justify-content: space-around; gap: 0.5em;">
+			{#each guesspos as pos, i}
+				<GameBoardPicker {colors} {colorsCount} id="guess[{i}]" value={parseInt(pos)}
+				></GameBoardPicker>
+			{/each}
 		</div>
 		<div style="display: flex;">
 			<Button small filled type="submit">Make a guess</Button>

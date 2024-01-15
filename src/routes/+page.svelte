@@ -1,15 +1,41 @@
 <script lang="ts">
 	// @ts-ignore
 	import { Headline, Subhead, Button, Card, Dot, Divider, Label, Slider, H1 } from 'attractions';
+	import GameBoard from '$lib/components/gameBoard.svelte';
 	export let data;
 	$: game = data.game;
-</script>
 
-<Subhead>Here is a solved game for you :)</Subhead>
-<br />
+	const colors = [
+		'#CCC',
+		'#FFF',
+		'#000',
+		'#a93226',
+		'#2e86c1',
+		'#28b463',
+		'#f4d03f',
+		'#a569bd',
+		'#7a5142',
+		'#ff4600',
+		'#9d9d9d'
+	];
+</script>
+<GameBoard
+		boardGuesses={game.board}
+		boardResolutions={game.resolution}
+		remainingAnswersCount={game.remainingAnswersCount}
+		sessionId={''}
+		{colors}
+		colorsCount={data.colors.length}
+		allowDuplicates={game.allowDuplicates}
+		columns={game.columns}
+		status={game.status}
+		answer={game.answer}
+		error_message={''}
+		maxAnswers={game.maxAnswers}
+	/>
 <!-- Implement the display of a game object here-->
-<div class="gamePanel">
-	<Card class="board">
+ <div class="gamePanel">
+	<!--<Card class="board">
 		<div class="answerrow">
 			{#key game.answer}
 				{#each game.answer as colorpin}
@@ -53,7 +79,7 @@
 			<br />
 			<Label>I {game.status} this game in {game.attempts + 1} attempts</Label>
 		</div>
-	</Card>
+	</Card> -->
 	<Card style="max-width: 280px; display: inline-block">
 		<H1>Options</H1>
 		<Label small>Colors</Label>
@@ -108,7 +134,7 @@
 </div>
 
 <style>
-	:global.board {
+/* 	:global.board {
 		background-color: #ccc !important;
 		padding: 10px;
 		width: 300px;
@@ -144,5 +170,5 @@
 		width: 30px;
 		text-align: center;
 		color: #4d4d4d;
-	}
+	} */
 </style>

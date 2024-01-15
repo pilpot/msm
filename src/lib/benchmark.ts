@@ -111,4 +111,4 @@ async function runBenchmark(numGames: number): Promise<void> {
 	);
 }
 
-await runBenchmark(50000);
+await runBenchmark(500);

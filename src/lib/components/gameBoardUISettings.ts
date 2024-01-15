@@ -1,5 +1,5 @@
 export default class GameBoardUISettings {
-	showAnswer: boolean = true;
+	showAnswer?: boolean = true;
 	showRemainingAnswersCount: boolean = true;
 	showJudge: boolean = true;
 }

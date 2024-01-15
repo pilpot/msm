@@ -1,8 +1,6 @@
 
 body {
   font-family: 'Noto Sans', sans-serif;
-  display: flex;
-  justify-content: center;
 }
 
 hr {
@@ -13,7 +11,6 @@ hr {
 .gameBoard {
   background: #CCC url(/bg-bg.jpg) center top/cover no-repeat;
   padding: 10px;
-  max-width: 550px;
   overflow: visible !important;
   padding:1.5em !important;
   padding-top:1em !important;

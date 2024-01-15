@@ -10,6 +10,7 @@
 	export let id = 'guess';
 	export let value: number = 1;
 	export let colors: string[] = [];
+	export let colorsCount: number = 8;
 
 	// Keyboard shortcut
 	let trigger = 'Escape';
@@ -76,12 +77,13 @@
 
 	function clickOutsideDropdown() {
 		ddActive = false;
-		console.log('clicked outside', ddActive);
 	}
 
 	function changeValue(innerValue: string) {
 		value = colors.indexOf(innerValue);
 		sessionStore(id, value.toString());
+		// hide error div
+		document?.querySelector('#error')?.setAttribute('style', 'display:none;');
 		ddActive = false;
 	}
 
@@ -152,7 +154,7 @@
 		<div class:top bind:clientHeight={ddHeight} class="values-dropdown" use:clickoutside on:clickoutside={clickOutsideDropdown}>
 			<div class="values-dropdown-grid">
 				{#each colors as val, index}
-					{#if index !== 0}
+					{#if index !== 0 && index < colorsCount + 1}
 						<button
 							id="{id}-{index}"
 							class:active={colors.indexOf(val) == value}
@@ -184,7 +186,6 @@
 		border: 1px solid #545454c7;
 		padding: 4px;
 		border-radius: 50%;
-		margin-right: 3px;
 		background: #ccc;
 		height: 35px;
 		width: 35px;
@@ -244,7 +245,7 @@
 		z-index: 1;
 		top: 38px;
 		background: #ccc;
-		border: 1px solid #ccc;
+		border: 1px solid #8d6767;
 		border-radius: 0.3rem;
 	}
 
