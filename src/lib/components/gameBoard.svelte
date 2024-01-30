@@ -1,6 +1,7 @@
 <script lang="ts">
 	// @ts-ignore
 	import { Card, Divider, Chip, Headline, H2, Switch, Button, Label, Loading } from 'attractions';
+	import { MsmGame } from '$lib/msmGame';
 	import GameBoardRow from './gameBoardRow.svelte';
 	import GameBoardAnswer from './gameBoardAnswer.svelte';
 	import GameBoardForm from './gameBoardForm.svelte';
@@ -20,6 +21,7 @@
 	export let columns: number;
 	export let status: 'idle' | 'playing' | 'won' | 'lost';
 	export let error_message: string;
+	export let game: MsmGame | undefined;
 	// group all game board settings in one object
 	export let UISettings: gameBoardUISettings = {
 		showRemainingAnswersCount: true,
@@ -60,7 +62,7 @@
 			<Divider style="margin-bottom: 1em;" />
 
 			{#if status !== 'won'}
-				<div transition:slide><GameBoardForm {sessionId} {colors} {colorsCount} {columns} /></div>
+				<div transition:slide><GameBoardForm {sessionId} {colors} {colorsCount} {columns} gameObject={game} /></div>
 			{/if}
 			{#if error_message}<div id="error" transition:slide><Chip small class="errorChip">{error_message}</Chip></div>{/if}
 			{#if status === 'won'}<div transition:slide><Chip small class="successChip">Well done!</Chip></div>{/if}

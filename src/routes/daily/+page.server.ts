@@ -17,9 +17,9 @@ async function createDailyGameSettings(db: PoolClient, game: MsmGame) {
 	//randow number of columns between 4 and 6
 	game.columns = Math.floor(Math.random() * 3) + 4;
 	// random number of colors between columns +1 and 10
-	game.setColors(Math.floor(Math.random() * (game.columns + 1)) + game.columns);
+	game.setColors(Math.floor(Math.random() * (game.columns + 1)) + game.columns - 1);
 	// allow duplicates is random true or false
-	game.allowDuplicates = Math.floor(Math.random() * 2) == 1;
+	game.allowDuplicates = Math.random() < 0.4;
 	// generate random answer
 	game.setAnswer();
 	await db.query(

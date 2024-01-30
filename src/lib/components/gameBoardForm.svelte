@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { enhance } from '$app/forms';
+	import { MsmGame } from '$lib/msmGame';
 	// @ts-ignore
 	import { Button } from 'attractions';
 	import GameBoardPicker from '$lib/components/gameBoardPicker.svelte';
@@ -9,6 +10,7 @@
 	export let colors: string[];
 	export let colorsCount: number;
 	export let columns: number;
+	export let gameObject: MsmGame | undefined;
 
 	let guesspos: string[] = new Array(columns);
 	// for each columns create a guesspos
@@ -32,12 +34,23 @@
 	action="?/submitGuess"
 	method="post"
 	enctype="multipart/form-data"
-	use:enhance={({}) => {
+	use:enhance={({ cancel }) => {
 		setLoading(true);
-		return async ({ update }) => {
-			await update();
+		if (gameObject) {
+			gameObject.setBoardRowAvailable(guesspos.map((x) => parseInt(x)));
+			gameObject.answerResolutionBoardAll();
+			gameObject.eliminateAnswersAll();
 			setLoading(false);
-		};
+			gameObject = gameObject;
+			console.log(gameObject);
+			cancel();
+			return () => {};
+		} else {
+			return async ({ update }) => {
+				await update();
+				setLoading(false);
+			};
+		}
 	}}
 >
 	<div
